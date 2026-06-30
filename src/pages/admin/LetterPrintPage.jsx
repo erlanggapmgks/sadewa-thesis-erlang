@@ -23,12 +23,12 @@ function getConfig(serviceType) {
     domisili: {
       code: 'SKD', prefix: '474',
       title: 'SURAT KETERANGAN DOMISILI',
-      statement: 'Adalah benar warga Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo yang berdomisili di alamat tersebut di atas dan saat ini masih tercatat sebagai penduduk yang sah.',
+      statement: 'Adalah benar warga Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk yang berdomisili di alamat tersebut di atas dan saat ini masih tercatat sebagai penduduk yang sah.',
     },
     pengantar: {
       code: 'SKP', prefix: '474',
       title: 'SURAT PENGANTAR',
-      statement: 'Adalah benar warga Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo. Surat pengantar ini diberikan agar yang bersangkutan dapat mempergunakan sebagaimana mestinya.',
+      statement: 'Adalah benar warga Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk. Surat pengantar ini diberikan agar yang bersangkutan dapat mempergunakan sebagaimana mestinya.',
     },
     sktm: {
       code: 'SKTM', prefix: '460',
@@ -38,17 +38,17 @@ function getConfig(serviceType) {
     usaha: {
       code: 'SKU', prefix: '503',
       title: 'SURAT KETERANGAN USAHA',
-      statement: 'Adalah benar warga Desa Wates yang menjalankan kegiatan usaha di wilayah Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo, dan tidak keberatan jika yang bersangkutan diberikan pelayanan yang diperlukan.',
+      statement: 'Adalah benar warga Desa Wates yang menjalankan kegiatan usaha di wilayah Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk, dan tidak keberatan jika yang bersangkutan diberikan pelayanan yang diperlukan.',
     },
     kelahiran: {
       code: 'SKL', prefix: '474',
       title: 'SURAT KETERANGAN KELAHIRAN',
-      statement: 'Adalah benar telah lahir seorang anak dari warga yang berdomisili di Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo, Daerah Istimewa Yogyakarta.',
+      statement: 'Adalah benar telah lahir seorang anak dari warga yang berdomisili di Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk, Daerah Istimewa Yogyakarta.',
     },
     kematian: {
       code: 'SKMN', prefix: '474',
       title: 'SURAT KETERANGAN KEMATIAN',
-      statement: 'Adalah benar telah meninggal dunia warga yang berdomisili di Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo, Daerah Istimewa Yogyakarta.',
+      statement: 'Adalah benar telah meninggal dunia warga yang berdomisili di Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk, Daerah Istimewa Yogyakarta.',
     },
   }
   return map[serviceType] ?? map.pengantar
@@ -65,8 +65,8 @@ const DEMO_REQUEST = {
   extracted_documents: [{
     full_name: 'Daniel Abraham',
     nik: '3401012345678901',
-    birth_date: 'Kulon Progo, 17 Agustus 1992',
-    address: 'Jl. Kenanga No. 5 RT 003/RW 002, Desa Wates, Kec. Wates, Kab. Kulon Progo',
+    birth_date: 'Nganjuk, 17 Agustus 1992',
+    address: 'Jl. Raya Wates No. 5 RT 003/RW 002, Desa Wates, Kec. Tanjunganom, Kab. Nganjuk',
   }],
 }
 
@@ -192,16 +192,16 @@ export default function LetterPrintPage() {
             </div>
             <div style={{ textAlign: 'center', flex: 1 }}>
               <div style={{ fontSize: '10pt', letterSpacing: '0.5px' }}>
-                PEMERINTAH KABUPATEN KULON PROGO
+                PEMERINTAH KABUPATEN NGANJUK
               </div>
               <div style={{ fontSize: '11pt', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                KECAMATAN WATES
+                KECAMATAN TANJUNGANOM
               </div>
               <div style={{ fontSize: '14pt', fontWeight: 'bold', letterSpacing: '1px' }}>
                 KANTOR KEPALA DESA WATES
               </div>
               <div style={{ fontSize: '9pt', marginTop: '2px' }}>
-                Jl. Stasiun No. 5, Wates, Kulon Progo 55611 &nbsp;·&nbsp; Telp. (0274) 773132
+                Jl. Raya Wates No. 1, Desa Wates, Kec. Tanjunganom, Kab. Nganjuk 64473 &nbsp;·&nbsp; Telp. (0358) 321000
               </div>
             </div>
           </div>
@@ -223,8 +223,8 @@ export default function LetterPrintPage() {
 
           {/* ── PEMBUKAAN ── */}
           <p style={{ textAlign: 'justify', marginBottom: '14px', textIndent: '36px' }}>
-            Yang bertanda tangan di bawah ini, Kepala Desa Wates, Kecamatan Wates, Kabupaten Kulon Progo,
-            Daerah Istimewa Yogyakarta, dengan ini menerangkan bahwa :
+            Yang bertanda tangan di bawah ini, Kepala Desa Wates, Kecamatan Tanjunganom, Kabupaten Nganjuk,
+            Jawa Timur, dengan ini menerangkan bahwa :
           </p>
 
           {/* ── DATA ── */}

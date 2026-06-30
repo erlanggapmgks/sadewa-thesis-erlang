@@ -3,13 +3,13 @@ const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px r
 
 const VILLAGE_INFO = [
   { label: 'Nama Desa',         value: 'Desa Wates' },
-  { label: 'Kecamatan',         value: 'Kecamatan Wates' },
-  { label: 'Kabupaten',         value: 'Kabupaten Kulon Progo' },
-  { label: 'Provinsi',          value: 'Daerah Istimewa Yogyakarta' },
-  { label: 'Kode Pos',          value: '55611' },
-  { label: 'Alamat Balai Desa', value: 'Jl. Stasiun No. 5, Wates, Kulon Progo' },
-  { label: 'Telepon',           value: '(0274) 773132' },
-  { label: 'Email Resmi',       value: 'deswates@kulonprogokab.go.id' },
+  { label: 'Kecamatan',         value: 'Kecamatan Tanjunganom' },
+  { label: 'Kabupaten',         value: 'Kabupaten Nganjuk' },
+  { label: 'Provinsi',          value: 'Jawa Timur' },
+  { label: 'Kode Pos',          value: '64473' },
+  { label: 'Alamat Balai Desa', value: 'Jl. Raya Wates No. 1, Desa Wates, Kec. Tanjunganom' },
+  { label: 'Telepon',           value: '(0358) 321000' },
+  { label: 'Email Resmi',       value: 'deswates@nganjukkab.go.id' },
 ]
 
 const SERVICE_HOURS = [
@@ -26,7 +26,7 @@ const SYSTEM_INFO = [
   { label: 'Nama Sistem',    value: 'SADEWA' },
   { label: 'Versi',          value: '1.0.0' },
   { label: 'Database',       value: 'Supabase (PostgreSQL)' },
-  { label: 'AI Engine',      value: 'Google Gemini 1.5 Flash' },
+  { label: 'AI Engine',      value: 'Tesseract.js (OCR)' },
   { label: 'Frontend',       value: 'React 19 + Vite + Tailwind CSS v4' },
   { label: 'Authentication', value: 'Supabase Auth (Row Level Security)' },
 ]

@@ -43,8 +43,8 @@ const DEMO_REQUEST = {
   extracted_documents: [{
     full_name: 'Daniel Abraham',
     nik: '3401012345678901',
-    birth_date: 'Kulon Progo, 1992-08-17',
-    address: 'Jl. Kenanga No. 5 RT 003/RW 002, Desa Wates, Kec. Wates, Kab. Kulon Progo',
+    birth_date: 'Nganjuk, 1992-08-17',
+    address: 'Jl. Raya Wates No. 5 RT 003/RW 002, Desa Wates, Kec. Tanjunganom, Kab. Nganjuk',
     confidence: 0.92,
   }],
 }

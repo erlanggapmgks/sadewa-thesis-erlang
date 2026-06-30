@@ -33,28 +33,6 @@ const FEATURES = [
     ),
   },
   {
-    title: 'Rekomendasi Jenis Surat',
-    description: 'Berdasarkan keperluan yang ditulis warga, AI merekomendasikan jenis surat yang paling sesuai dari 6 layanan yang tersedia.',
-    color: '#d97706',
-    bg: 'rgba(217,119,6,0.06)',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.75">
-        <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Asisten Virtual Berbasis Gemini',
-    description: 'Chatbot bertenaga Gemini AI menjawab pertanyaan seputar layanan desa secara real-time, terbatas hanya pada topik administrasi Desa Wates.',
-    color: '#0891b2',
-    bg: 'rgba(8,145,178,0.06)',
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0891b2" strokeWidth="1.75">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-      </svg>
-    ),
-  },
-  {
     title: 'Penerbitan Surat Digital',
     description: 'Setelah disetujui admin, surat keterangan resmi dihasilkan secara otomatis sesuai format dinas dan siap dicetak atau disimpan sebagai PDF.',
     color: '#10b981',
@@ -84,13 +62,13 @@ export default function FeaturesSection() {
             Fitur Kecerdasan Buatan
           </h2>
           <p className="mt-4 text-[18px] text-[#6b7280] leading-7 max-w-[600px] mx-auto">
-            SADEWA mengintegrasikan AI di setiap tahap proses administrasi untuk
-            kecepatan, akurasi, dan kemudahan layanan
+            SADEWA menggunakan AI untuk membaca, memvalidasi, dan mengisi data dokumen
+            secara otomatis sehingga proses administrasi lebih cepat dan akurat
           </p>
         </div>
 
         {/* Feature grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[900px] mx-auto">
           {FEATURES.map((f) => (
             <article
               key={f.title}

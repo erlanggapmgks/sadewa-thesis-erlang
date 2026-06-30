@@ -38,7 +38,7 @@ function CtaSection() {
           </Link>
         </div>
         <p className="mt-6 text-[13px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Jam layanan: Senin–Jumat 08.00–15.00 WIB &nbsp;·&nbsp; Balai Desa Wates, Kulon Progo
+          Jam layanan: Senin–Jumat 08.00–15.00 WIB &nbsp;·&nbsp; Balai Desa Wates, Kec. Tanjunganom, Kab. Nganjuk
         </p>
       </div>
     </section>

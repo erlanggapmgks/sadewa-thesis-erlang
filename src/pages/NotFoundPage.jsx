@@ -63,7 +63,7 @@ export default function NotFoundPage() {
 
       {/* Footer note */}
       <p className="mt-12 text-[13px] text-[#9ca3af]">
-        SADEWA · Sistem Administrasi Desa Wates, Kulon Progo
+        SADEWA · Sistem Administrasi Desa Wates, Kab. Nganjuk
       </p>
     </div>
   )

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
-import ChatAssistant from '../components/citizen/ChatAssistant'
 import { ROUTES } from '../routes/routes'
 import { useAuthContext } from '../context/AuthContext'
 
@@ -241,9 +240,6 @@ export default function CitizenLayout() {
       </main>
 
       <Footer />
-
-      {/* AI Chat Assistant */}
-      <ChatAssistant />
     </div>
   )
 }

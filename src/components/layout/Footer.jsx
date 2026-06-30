@@ -67,9 +67,9 @@ const QUICK_LINKS = ['Beranda', 'Profil Desa', 'Berita', 'Kontak']
 const SERVICE_LINKS = ['Portal Warga', 'Permohonan Baru', 'Lacak Permohonan', 'Verifikasi QR']
 
 const CONTACT_ITEMS = [
-  { icon: <MapPinIcon />, text: 'Kantor Desa Wates, Jl. Utama No. 1' },
-  { icon: <PhoneIcon />, text: '+62 123 4567 890' },
-  { icon: <EnvelopeIcon />, text: 'info@desawates.go.id' },
+  { icon: <MapPinIcon />, text: 'Jl. Raya Wates No. 1, Kec. Tanjunganom, Kab. Nganjuk' },
+  { icon: <PhoneIcon />, text: '(0358) 321000' },
+  { icon: <EnvelopeIcon />, text: 'deswates@nganjukkab.go.id' },
 ]
 
 const SOCIALS = [

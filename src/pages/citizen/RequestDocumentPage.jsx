@@ -29,8 +29,8 @@ const STEPS = ['Pilih Layanan', 'Unggah Dokumen', 'Verifikasi AI', 'Konfirmasi']
 const MOCK_EXTRACTED = {
   name: '',
   nik: '3401012345678901',
-  address: 'Jl. Kenanga No. 5 RT 003/RW 002, Desa Wates, Kec. Wates, Kab. Kulon Progo',
-  birthPlace: 'Kulon Progo',
+  address: 'Jl. Raya Wates No. 5 RT 003/RW 002, Desa Wates, Kec. Tanjunganom, Kab. Nganjuk',
+  birthPlace: 'Nganjuk',
   birthDate: '1992-08-17',
 }
 
