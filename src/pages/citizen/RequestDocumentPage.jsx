@@ -22,6 +22,29 @@ const SERVICES = [
 
 const SERVICE_LABELS = Object.fromEntries(SERVICES.map(s => [s.id, s.label]))
 
+const ADDITIONAL_FIELDS = {
+  usaha: [
+    { key: 'nama_usaha',   label: 'Nama Usaha',   type: 'text',   placeholder: 'Contoh: Warung Makan Bu Sari', required: true },
+    { key: 'jenis_usaha',  label: 'Jenis Usaha',  type: 'text',   placeholder: 'Contoh: Kuliner / Toko Sembako', required: true },
+    { key: 'alamat_usaha', label: 'Alamat Usaha', type: 'text',   placeholder: 'Alamat tempat usaha beroperasi', required: true },
+  ],
+  kelahiran: [
+    { key: 'nama_bayi',          label: 'Nama Bayi',          type: 'text',   placeholder: 'Nama lengkap bayi', required: true },
+    { key: 'jenis_kelamin_bayi', label: 'Jenis Kelamin Bayi', type: 'select', options: ['Laki-laki', 'Perempuan'], required: true },
+    { key: 'tanggal_lahir_bayi', label: 'Tanggal Lahir Bayi', type: 'date',   placeholder: '', required: true },
+    { key: 'nama_ayah',          label: 'Nama Ayah',          type: 'text',   placeholder: 'Nama lengkap ayah', required: true },
+    { key: 'nama_ibu',           label: 'Nama Ibu',           type: 'text',   placeholder: 'Nama lengkap ibu', required: true },
+  ],
+  kematian: [
+    { key: 'nama_almarhum',     label: 'Nama Almarhum/ah',         type: 'text', placeholder: 'Nama lengkap', required: true },
+    { key: 'tanggal_meninggal', label: 'Tanggal Meninggal',        type: 'date', placeholder: '', required: true },
+    { key: 'tempat_meninggal',  label: 'Tempat Meninggal',         type: 'text', placeholder: 'Contoh: Rumah / RSUD Nganjuk', required: true },
+    { key: 'penyebab_kematian', label: 'Penyebab Kematian',        type: 'text', placeholder: 'Contoh: Sakit keras', required: false },
+    { key: 'nama_pelapor',      label: 'Nama Pelapor',             type: 'text', placeholder: 'Nama yang melaporkan', required: true },
+    { key: 'hubungan_pelapor',  label: 'Hubungan dengan Almarhum', type: 'text', placeholder: 'Contoh: Anak / Istri / Suami', required: true },
+  ],
+}
+
 const STEPS = ['Pilih Layanan', 'Unggah Dokumen', 'Verifikasi AI', 'Konfirmasi']
 
 // ── AI processing — real Gemini OCR with mock fallback ───────────────────────
@@ -243,6 +266,8 @@ export default function RequestDocumentPage() {
   const [selectedService, setSelectedService] = useState(null)
   const [purpose, setPurpose]                 = useState('')
   const [step1Errors, setStep1Errors]         = useState({})
+  const [additionalData, setAdditionalData]   = useState({})
+  const [additionalErrors, setAdditionalErrors] = useState({})
 
   // Step 2
   const [ktpFile, setKtpFile]       = useState(null)
@@ -285,8 +310,21 @@ export default function RequestDocumentPage() {
     const e = {}
     if (!selectedService) e.service = 'Pilih jenis layanan yang dibutuhkan.'
     if (!purpose.trim())  e.purpose = 'Tuliskan keperluan Anda.'
-    if (Object.keys(e).length) { setStep1Errors(e); return }
+
+    const addErrs = {}
+    ;(ADDITIONAL_FIELDS[selectedService] ?? []).forEach(f => {
+      if (f.required && !additionalData[f.key]?.toString().trim()) {
+        addErrs[f.key] = `${f.label} wajib diisi.`
+      }
+    })
+
+    if (Object.keys(e).length || Object.keys(addErrs).length) {
+      setStep1Errors(e)
+      setAdditionalErrors(addErrs)
+      return
+    }
     setStep1Errors({})
+    setAdditionalErrors({})
     setStep(2)
   }
 
@@ -345,6 +383,7 @@ export default function RequestDocumentPage() {
       }
 
       // Save request to DB
+      const hasAddData = Object.keys(additionalData).length > 0
       const reqRes = await documentService.createDocumentRequest({
         user_id: user.id,
         service_type: selectedService,
@@ -352,6 +391,7 @@ export default function RequestDocumentPage() {
         ktp_url: ktpRes.url,
         kk_url: kkRes.url,
         purpose,
+        additional_data: hasAddData ? additionalData : null,
         ai_reading_status: aiResult.quality.ktp === 'good' ? 'success' : 'warning',
         document_quality_status: aiResult.quality.ktp,
       })
@@ -463,7 +503,12 @@ export default function RequestDocumentPage() {
                         <button
                           key={svc.id}
                           type="button"
-                          onClick={() => { setSelectedService(svc.id); setStep1Errors(e => ({ ...e, service: '' })) }}
+                          onClick={() => {
+                            setSelectedService(svc.id)
+                            setAdditionalData({})
+                            setAdditionalErrors({})
+                            setStep1Errors(e => ({ ...e, service: '' }))
+                          }}
                           className="text-left p-4 rounded-lg border-2 transition-all cursor-pointer"
                           style={{
                             borderColor: sel ? '#1e40af' : '#e5e7eb',
@@ -502,6 +547,55 @@ export default function RequestDocumentPage() {
                   />
                   {step1Errors.purpose && <p className="text-[12px] text-red-500">{step1Errors.purpose}</p>}
                 </div>
+
+                {/* ── Data tambahan per jenis surat ── */}
+                {selectedService && (ADDITIONAL_FIELDS[selectedService] ?? []).length > 0 && (
+                  <div className="flex flex-col gap-4 pt-2">
+                    <div>
+                      <p className="font-semibold text-[14px] text-[#1a1a1a]">Data Tambahan</p>
+                      <p className="text-[13px] text-[#6b7280] mt-0.5">
+                        Informasi yang dibutuhkan untuk {SERVICE_LABELS[selectedService]}
+                      </p>
+                    </div>
+                    {(ADDITIONAL_FIELDS[selectedService] ?? []).map(field => (
+                      <div key={field.key} className="flex flex-col gap-1.5">
+                        <label className="font-medium text-[13px] text-[#1a1a1a]">
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                        </label>
+                        {field.type === 'select' ? (
+                          <select
+                            value={additionalData[field.key] ?? ''}
+                            onChange={e => {
+                              setAdditionalData(prev => ({ ...prev, [field.key]: e.target.value }))
+                              setAdditionalErrors(prev => ({ ...prev, [field.key]: '' }))
+                            }}
+                            className={`w-full h-10 bg-[#f9fafb] border rounded-lg px-[13px] text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent ${additionalErrors[field.key] ? 'border-red-400' : 'border-[#e5e7eb]'}`}
+                          >
+                            <option value="">-- Pilih --</option>
+                            {field.options.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={field.type}
+                            value={additionalData[field.key] ?? ''}
+                            onChange={e => {
+                              setAdditionalData(prev => ({ ...prev, [field.key]: e.target.value }))
+                              setAdditionalErrors(prev => ({ ...prev, [field.key]: '' }))
+                            }}
+                            placeholder={field.placeholder}
+                            className={`w-full h-10 bg-[#f9fafb] border rounded-lg px-[13px] text-[14px] text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent ${additionalErrors[field.key] ? 'border-red-400' : 'border-[#e5e7eb]'}`}
+                          />
+                        )}
+                        {additionalErrors[field.key] && (
+                          <p className="text-[12px] text-red-500">{additionalErrors[field.key]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex justify-end">
                   <button
@@ -609,12 +703,24 @@ export default function RequestDocumentPage() {
 
                 {/* Summary */}
                 <div className="flex flex-col gap-3">
-                  <SummaryRow label="Jenis Layanan"   value={SERVICE_LABELS[selectedService]} />
-                  <SummaryRow label="Keperluan"        value={purpose} />
-                  <SummaryRow label="Nama Lengkap"     value={extracted.name} />
-                  <SummaryRow label="NIK"              value={extracted.nik} mono />
+                  <SummaryRow label="Jenis Layanan"    value={SERVICE_LABELS[selectedService]} />
+                  <SummaryRow label="Keperluan"         value={purpose} />
+                  <SummaryRow label="Nama Lengkap"      value={extracted.name} />
+                  <SummaryRow label="NIK"               value={extracted.nik} mono />
                   <SummaryRow label="Tempat, Tgl Lahir" value={`${extracted.birthPlace}, ${extracted.birthDate}`} />
-                  <SummaryRow label="Alamat"           value={extracted.address} />
+                  <SummaryRow label="Alamat"            value={extracted.address} />
+
+                  {/* Data tambahan per jenis surat */}
+                  {(ADDITIONAL_FIELDS[selectedService] ?? []).length > 0 && (
+                    <>
+                      <div className="pt-2 pb-1">
+                        <p className="text-[12px] font-semibold text-[#6b7280] uppercase tracking-wide">Data Tambahan</p>
+                      </div>
+                      {(ADDITIONAL_FIELDS[selectedService] ?? []).map(f => (
+                        <SummaryRow key={f.key} label={f.label} value={additionalData[f.key] || '—'} />
+                      ))}
+                    </>
+                  )}
                 </div>
 
                 {/* Document preview thumbnails */}

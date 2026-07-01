@@ -13,10 +13,12 @@ const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
-  pending:   { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan' },
-  approved:  { bg: 'rgba(245,158,11,0.1)',  text: '#f59e0b', label: 'Disetujui' },
-  rejected:  { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak' },
-  completed: { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Selesai' },
+  pending:      { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan' },
+  kades_review: { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed', label: 'Menunggu TTD Kades' },
+  signed:       { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Sudah Ditandatangani' },
+  approved:     { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Disetujui' },
+  rejected:     { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Ditolak' },
+  completed:    { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Selesai' },
 }
 
 const QUALITY_MAP = {
@@ -170,15 +172,7 @@ export default function RequestDetailPage() {
 
   async function handleGenerateLetter() {
     setCompleting(true)
-    const currentStatus = action ?? req.status
-    if (currentStatus !== 'completed') {
-      if (supabase) {
-        await updateRequestStatus(id, 'completed', catatan, user?.id)
-      } else {
-        await new Promise(r => setTimeout(r, 400))
-      }
-      setReq(prev => ({ ...prev, status: 'completed' }))
-    }
+    await new Promise(r => setTimeout(r, 200))
     setCompleting(false)
     navigate(ROUTES.ADMIN_LETTER_PRINT.replace(':id', id))
   }
@@ -196,13 +190,14 @@ export default function RequestDetailPage() {
 
   if (!req) return null
 
-  const extracted    = req.extracted_documents?.[0] ?? null
-  const statusInfo   = STATUS_MAP[req.status] ?? STATUS_MAP.pending
-  const isComplete   = req.completeness_status === 'complete'
+  const extracted     = req.extracted_documents?.[0] ?? null
   const currentStatus = action ?? req.status
-  const isPending    = currentStatus === 'pending'
-  const isApproved   = currentStatus === 'approved'
-  const isDone       = !isPending
+  const statusInfo    = STATUS_MAP[currentStatus] ?? STATUS_MAP.pending
+  const isComplete    = req.completeness_status === 'complete'
+  const isPending     = currentStatus === 'pending'
+  const isKadesReview = currentStatus === 'kades_review'
+  const canGenerate   = currentStatus === 'signed' || currentStatus === 'approved' || currentStatus === 'completed'
+  const isDone        = !isPending
 
   return (
     <div>
@@ -231,12 +226,16 @@ export default function RequestDetailPage() {
           <div
             className="mb-6 rounded-lg px-4 py-3 flex items-center gap-3 text-[14px] font-medium"
             style={{
-              background: action === 'approved' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-              color:      action === 'approved' ? '#10b981' : '#ef4444',
+              background: action === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(124,58,237,0.1)',
+              color:      action === 'rejected' ? '#ef4444' : '#7c3aed',
             }}
           >
-            {action === 'approved' ? <CheckIcon size={18} /> : <XMarkIcon size={18} />}
-            {action === 'approved' ? 'Permohonan telah disetujui.' : 'Permohonan telah ditolak.'}
+            {action === 'rejected' ? <XMarkIcon size={18} /> : <CheckIcon size={18} />}
+            {action === 'kades_review'
+              ? 'Permohonan telah diteruskan ke Kepala Desa.'
+              : action === 'rejected'
+              ? 'Permohonan telah ditolak.'
+              : 'Permohonan diproses.'}
           </div>
         )}
 
@@ -403,7 +402,7 @@ export default function RequestDetailPage() {
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons — admin hanya bisa teruskan ke kades atau tolak */}
             {isPending && (
               <div className="bg-white border border-[#e5e7eb] rounded-lg" style={CARD_SHADOW}>
                 <div className="px-5 py-4 border-b border-[#e5e7eb]">
@@ -411,13 +410,13 @@ export default function RequestDetailPage() {
                 </div>
                 <div className="px-5 py-4 flex flex-col gap-3">
                   <button
-                    onClick={() => handleAction('approved')}
+                    onClick={() => handleAction('kades_review')}
                     disabled={submitting}
                     className="w-full h-11 rounded-lg flex items-center justify-center gap-2 text-[15px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 disabled:opacity-60"
-                    style={{ background: '#10b981' }}
+                    style={{ background: '#7c3aed' }}
                   >
                     <CheckIcon size={18} />
-                    {submitting ? 'Menyimpan...' : 'Setujui Permohonan'}
+                    {submitting ? 'Menyimpan...' : 'Teruskan ke Kepala Desa'}
                   </button>
                   <button
                     onClick={() => handleAction('rejected')}
@@ -432,8 +431,17 @@ export default function RequestDetailPage() {
               </div>
             )}
 
-            {/* Generate letter — only for approved or completed requests */}
-            {(isApproved || currentStatus === 'completed') && (
+            {/* Info saat menunggu TTD kades */}
+            {isKadesReview && (
+              <div className="rounded-lg px-5 py-4 text-[13px]"
+                style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: '#7c3aed' }}>
+                <p className="font-medium mb-1">Menunggu tanda tangan Kepala Desa</p>
+                <p style={{ color: '#6b7280' }}>Permohonan sudah diteruskan. Kepala Desa akan menandatangani atau menolak.</p>
+              </div>
+            )}
+
+            {/* Generate letter — setelah kades TTD atau status lama 'approved' */}
+            {canGenerate && (
               <div className="bg-white border border-[#e5e7eb] rounded-lg" style={CARD_SHADOW}>
                 <div className="px-5 py-4 flex flex-col gap-2">
                   <button

@@ -45,7 +45,7 @@ export async function getMyRequests(userId) {
 export async function getRequestById(requestId) {
   const { data, error } = await supabase
     .from('service_requests')
-    .select('*, extracted_documents(*)')
+    .select('*, profiles!user_id(full_name, email, nik), extracted_documents(*)')
     .eq('id', requestId)
     .single()
   if (error) return null
@@ -67,6 +67,33 @@ export async function updateRequestStatus(requestId, status, adminNotes, reviewe
   const { data, error } = await supabase
     .from('service_requests')
     .update({ status, admin_notes: adminNotes, reviewed_by: reviewerId })
+    .eq('id', requestId)
+    .select()
+    .single()
+  if (error) return { ok: false, message: error.message }
+  return { ok: true, request: data }
+}
+
+export async function getKadesRequests() {
+  const { data, error } = await supabase
+    .from('service_requests')
+    .select('*, profiles!user_id(full_name, email, nik)')
+    .in('status', ['kades_review', 'signed', 'rejected'])
+    .order('created_at', { ascending: false })
+  if (error) return []
+  return data
+}
+
+export async function updateKadesStatus(requestId, status, kadesNotes, kadesReviewerId) {
+  const updates = {
+    status,
+    kades_notes: kadesNotes,
+    kades_reviewed_by: kadesReviewerId,
+    ...(status === 'signed' ? { signed_at: new Date().toISOString() } : {}),
+  }
+  const { data, error } = await supabase
+    .from('service_requests')
+    .update(updates)
     .eq('id', requestId)
     .select()
     .single()

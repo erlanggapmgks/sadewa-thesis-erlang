@@ -10,6 +10,7 @@ import ProtectedRoute from './ProtectedRoute'
 import AuthLayout from '../layouts/AuthLayout'
 import CitizenLayout from '../layouts/CitizenLayout'
 import AdminLayout from '../layouts/AdminLayout'
+import KadesLayout from '../layouts/KadesLayout'
 
 // Auth pages
 import LoginPage from '../pages/auth/LoginPage'
@@ -20,6 +21,11 @@ import CitizenDashboard from '../pages/citizen/DashboardPage'
 import CitizenRequest from '../pages/citizen/RequestDocumentPage'
 import CitizenTrack from '../pages/citizen/TrackRequestPage'
 import CitizenProfile from '../pages/citizen/ProfilePage'
+
+// Kepala Desa pages
+import KadesDashboard from '../pages/kades/DashboardPage'
+import KadesRequests from '../pages/kades/RequestsPage'
+import KadesRequestDetail from '../pages/kades/RequestDetailPage'
 
 // Admin pages
 import AdminDashboard from '../pages/admin/DashboardPage'
@@ -33,6 +39,7 @@ import LetterPrintPage from '../pages/admin/LetterPrintPage'
 
 // Misc
 import NotFoundPage from '../pages/NotFoundPage'
+import VerifyLetterPage from '../pages/VerifyLetterPage'
 import LandingPage from '../pages/LandingPage'
 import VillageProfilePage from '../pages/VillageProfilePage'
 import BeritaPage from '../pages/BeritaPage'
@@ -89,6 +96,20 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // Kepala Desa routes
+  {
+    element: (
+      <ProtectedRoute allowedRoles={[ROLES.KEPALA_DESA]}>
+        <KadesLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: ROUTES.KADES_DASHBOARD,      element: <KadesDashboard /> },
+      { path: ROUTES.KADES_REQUESTS,       element: <KadesRequests /> },
+      { path: ROUTES.KADES_REQUEST_DETAIL, element: <KadesRequestDetail /> },
+    ],
+  },
+
   // Admin letter print — outside layout so printing is clean
   {
     path: ROUTES.ADMIN_LETTER_PRINT,
@@ -108,6 +129,9 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+
+  // Verifikasi surat — publik, tanpa login
+  { path: ROUTES.VERIFY_LETTER, element: <VerifyLetterPage /> },
 
   // 404
   { path: ROUTES.NOT_FOUND, element: <NotFoundPage /> },

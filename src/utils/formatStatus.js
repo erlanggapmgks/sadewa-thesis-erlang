@@ -8,9 +8,13 @@ const STATUS_CONFIG = {
     label: 'Menunggu',
     color: 'bg-yellow-100 text-yellow-800',
   },
-  [REQUEST_STATUS.REVIEWED]: {
-    label: 'Sedang Diproses',
-    color: 'bg-blue-100 text-blue-800',
+  [REQUEST_STATUS.KADES_REVIEW]: {
+    label: 'Menunggu TTD Kades',
+    color: 'bg-purple-100 text-purple-800',
+  },
+  [REQUEST_STATUS.SIGNED]: {
+    label: 'Sudah Ditandatangani',
+    color: 'bg-emerald-100 text-emerald-800',
   },
   [REQUEST_STATUS.APPROVED]: {
     label: 'Disetujui',
@@ -19,6 +23,10 @@ const STATUS_CONFIG = {
   [REQUEST_STATUS.REJECTED]: {
     label: 'Ditolak',
     color: 'bg-red-100 text-red-800',
+  },
+  [REQUEST_STATUS.COMPLETED]: {
+    label: 'Selesai',
+    color: 'bg-gray-100 text-gray-800',
   },
 }
 

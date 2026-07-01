@@ -99,7 +99,11 @@ export function AuthProvider({ children }) {
     // React state isn't readable synchronously after applySession — re-read
     // role from the profile directly to determine where to navigate.
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
-    const resolvedHome = profile?.role === 'admin' ? ROUTES.ADMIN_DASHBOARD : ROUTES.CITIZEN_DASHBOARD
+    const homeByRole = {
+      admin:       ROUTES.ADMIN_DASHBOARD,
+      kepala_desa: ROUTES.KADES_DASHBOARD,
+    }
+    const resolvedHome = homeByRole[profile?.role] ?? ROUTES.CITIZEN_DASHBOARD
     return { ok: true, home: resolvedHome }
   }
 

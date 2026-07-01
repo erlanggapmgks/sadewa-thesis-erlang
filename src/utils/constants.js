@@ -6,8 +6,9 @@ export const APP_FULL_NAME = 'Sistem Administrasi Desa Wates'
 
 // User roles — must match the "role" column value in Supabase's users table
 export const ROLES = {
-  CITIZEN: 'citizen',
-  ADMIN: 'admin',
+  CITIZEN:     'citizen',
+  ADMIN:       'admin',
+  KEPALA_DESA: 'kepala_desa',
 }
 
 // Document types citizens can request
@@ -29,19 +30,24 @@ export const DOCUMENT_TYPE_LABELS = {
   [DOCUMENT_TYPES.SURAT_KETERANGAN_KEMATIAN]: 'Surat Keterangan Kematian',
 }
 
-// Request status flow: pending → approved / rejected → completed
+// Request status flow: pending → kades_review → signed → completed
+//                      pending / kades_review → rejected
 export const REQUEST_STATUS = {
-  PENDING:   'pending',
-  APPROVED:  'approved',
-  REJECTED:  'rejected',
-  COMPLETED: 'completed',
+  PENDING:       'pending',
+  KADES_REVIEW:  'kades_review',
+  SIGNED:        'signed',
+  REJECTED:      'rejected',
+  COMPLETED:     'completed',
+  APPROVED:      'approved', // legacy — treated same as signed
 }
 
 export const REQUEST_STATUS_LABELS = {
-  pending:   'Menunggu Tinjauan',
-  approved:  'Disetujui',
-  rejected:  'Ditolak',
-  completed: 'Selesai',
+  pending:      'Menunggu Tinjauan',
+  kades_review: 'Menunggu TTD Kades',
+  signed:       'Sudah Ditandatangani',
+  rejected:     'Ditolak',
+  completed:    'Selesai',
+  approved:     'Disetujui',
 }
 
 // For displaying service_type from DB

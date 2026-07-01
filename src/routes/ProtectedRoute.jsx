@@ -12,8 +12,9 @@ import { useAuthContext } from '../context/AuthContext'
 import { ROUTES } from './routes'
 
 const ROLE_HOME = {
-  citizen: ROUTES.CITIZEN_DASHBOARD,
-  admin: ROUTES.ADMIN_DASHBOARD,
+  citizen:     ROUTES.CITIZEN_DASHBOARD,
+  admin:       ROUTES.ADMIN_DASHBOARD,
+  kepala_desa: ROUTES.KADES_DASHBOARD,
 }
 
 export default function ProtectedRoute({ children, allowedRoles }) {

@@ -38,30 +38,38 @@ function TrendUpIcon() {
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: '12.543', label: 'Total Penduduk', icon: <UsersIcon /> },
-  { value: '45,2 km²', label: 'Luas Wilayah', icon: <MapIcon /> },
-  { value: '8', label: 'Jumlah Dusun', icon: <BuildingIcon /> },
-  { value: '+2,3%', label: 'Tingkat Pertumbuhan', icon: <TrendUpIcon /> },
+  { value: '1.927 ha', label: 'Luas Wilayah',   icon: <MapIcon /> },
+  { value: '3',        label: 'Jumlah Dusun',    icon: <BuildingIcon /> },
+  { value: '±3 km',   label: 'Jarak ke Kecamatan', icon: <TrendUpIcon /> },
+  { value: '4',        label: 'Batas Wilayah',   icon: <UsersIcon /> },
 ]
 
 const SEJARAH_PARAGRAPHS = [
-  'Didirikan pada tahun 1850, Desa Wates memiliki sejarah yang kaya selama lebih dari 170 tahun. Berawal dari pemukiman pertanian kecil, desa ini telah berkembang menjadi komunitas yang dinamis yang memadukan tradisi dan inovasi modern.',
-  'Sepanjang sejarahnya, Desa Wates dikenal dengan semangat gotong royong yang kuat, keunggulan pertanian, dan komitmen terhadap pendidikan. Dalam beberapa tahun terakhir, kami telah merangkul transformasi digital untuk melayani warga lebih baik.',
-  'Peluncuran sistem administrasi digital SADEWA pada tahun 2026 menandai babak baru perjalanan kami, menjadikan Desa Wates sebagai salah satu desa pertama di wilayah ini yang menawarkan layanan warga sepenuhnya online.',
+  'Desa Wates adalah salah satu desa yang terletak di Kecamatan Tanjunganom, Kabupaten Nganjuk, Provinsi Jawa Timur. Desa yang asri ini memiliki luas wilayah sekitar 1.927 hektar dan berjarak kurang lebih 3 kilometer ke arah barat dari pusat Kecamatan Tanjunganom.',
+  'Secara geografis, Desa Wates berbatasan langsung dengan Desa Ngadirejo di sebelah utara, Desa Banjaranyar di sebelah timur, Desa Sumberkepuh di sebelah selatan, dan Desa Malangsari di sebelah barat. Wilayah desa terbagi menjadi tiga dusun, yaitu Dusun Wates, Dusun Pulorejo, dan Dusun Ngrowo.',
+  'Dengan semangat gotong royong yang kuat dan komitmen terhadap pelayanan masyarakat, Desa Wates terus berinovasi. Peluncuran sistem administrasi digital SADEWA pada tahun 2026 menandai babak baru, menjadikan Desa Wates sebagai salah satu desa pertama di wilayah ini yang menawarkan layanan administrasi warga secara online.',
 ]
 
 const MISI_ITEMS = [
-  'Memberikan pelayanan publik yang efisien, transparan, dan mudah diakses',
-  'Mendorong pengembangan ekonomi dan kewirausahaan masyarakat',
-  'Meningkatkan fasilitas pendidikan dan kesehatan warga',
-  'Melestarikan nilai budaya dan keberlanjutan lingkungan hidup',
+  'Memberikan pelayanan publik yang efisien, transparan, dan mudah diakses seluruh warga',
+  'Mendorong pengembangan ekonomi dan kewirausahaan masyarakat desa',
+  'Meningkatkan fasilitas pendidikan dan kesehatan warga Desa Wates',
+  'Melestarikan nilai budaya lokal dan keberlanjutan lingkungan hidup',
+]
+
+const BATAS_WILAYAH = [
+  { arah: 'Utara',   desa: 'Desa Ngadirejo' },
+  { arah: 'Timur',   desa: 'Desa Banjaranyar' },
+  { arah: 'Selatan', desa: 'Desa Sumberkepuh' },
+  { arah: 'Barat',   desa: 'Desa Malangsari' },
 ]
 
 const STRUKTUR = [
-  { name: 'Dr. Ahmad Sukarno', role: 'Kepala Desa', period: '2024–2029' },
-  { name: 'Budi Santoso, S.Sos', role: 'Sekretaris Desa', period: '2020–Sekarang' },
-  { name: 'Siti Nurhaliza, S.E.', role: 'Kaur Keuangan', period: '2022–Sekarang' },
-  { name: 'Rudi Hartono, S.T.', role: 'Kaur Pembangunan', period: '2021–Sekarang' },
+  { name: 'Wijisianti Priatna, S.Pd.', role: 'Kepala Desa',            period: 'Menjabat' },
+  { name: 'Lilik Eko Prasetyo, S.AP.', role: 'Sekretaris Desa',        period: 'Menjabat' },
+  { name: 'Hartini',                   role: 'Kepala Dusun Wates',     period: 'Menjabat' },
+  { name: 'Endang Susilowati',         role: 'Kepala Dusun Pulorejo',  period: 'Menjabat' },
+  { name: 'Isminingsih',               role: 'Kepala Dusun Ngrowo',    period: 'Menjabat' },
 ]
 
 const HERO_GRADIENT = 'linear-gradient(170.67deg, #1e40af 0%, #10b981 100%)'
@@ -155,8 +163,22 @@ export default function VillageProfilePage() {
             </Card>
           </div>
 
+          {/* Batas Wilayah */}
+          <div className="pt-10">
+            <Card title="Batas Wilayah">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {BATAS_WILAYAH.map(({ arah, desa }) => (
+                  <div key={arah} className="rounded-lg p-4 text-center" style={{ background: 'rgba(30,64,175,0.04)', border: '1px solid rgba(30,64,175,0.1)' }}>
+                    <p className="text-[11px] font-semibold text-[#1e40af] uppercase tracking-widest mb-1">{arah}</p>
+                    <p className="text-[14px] text-[#1a1a1a] font-medium">{desa}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
           {/* Visi & Misi */}
-          <div className="pt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="pt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Visi */}
             <Card title="Visi">
               <p className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">

@@ -1,3 +1,6 @@
+import { useState, useEffect, useRef } from 'react'
+import { getVillageSetting, uploadSignature, setVillageSetting } from '../../services/settingsService'
+
 const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
 const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
@@ -52,6 +55,110 @@ function InfoRow({ label, value }) {
   )
 }
 
+function TtdSection() {
+  const fileRef            = useRef(null)
+  const [ttdUrl, setTtdUrl]       = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [status, setStatus]       = useState(null) // { ok, msg }
+
+  useEffect(() => {
+    getVillageSetting('ttd_url').then(url => setTtdUrl(url))
+  }, [])
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setStatus({ ok: false, msg: 'File harus berupa gambar (PNG/JPG)' })
+      return
+    }
+    setUploading(true)
+    setStatus(null)
+    const res = await uploadSignature(file)
+    if (!res.ok) {
+      setStatus({ ok: false, msg: res.message })
+      setUploading(false)
+      return
+    }
+    await setVillageSetting('ttd_url', res.url)
+    setTtdUrl(res.url)
+    setStatus({ ok: true, msg: 'Tanda tangan berhasil disimpan.' })
+    setUploading(false)
+  }
+
+  async function handleRemove() {
+    await setVillageSetting('ttd_url', null)
+    setTtdUrl(null)
+    setStatus({ ok: true, msg: 'Tanda tangan dihapus.' })
+  }
+
+  return (
+    <SectionCard
+      title="Tanda Tangan Kepala Desa"
+      icon={
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.75">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+        </svg>
+      }
+    >
+      <p className="text-[13px] text-[#6b7280] mb-4">
+        Upload gambar tanda tangan kepala desa (PNG transparan direkomendasikan). Akan tampil otomatis di setiap surat yang diterbitkan.
+      </p>
+
+      {ttdUrl ? (
+        <div className="mb-4">
+          <p className="text-[12px] text-[#6b7280] mb-2">Preview tanda tangan saat ini:</p>
+          <div className="border border-[#e5e7eb] rounded-lg p-4 bg-[#f9fafb] inline-block">
+            <img
+              src={ttdUrl}
+              alt="Tanda tangan kepala desa"
+              className="h-20 object-contain"
+              style={{ maxWidth: 220 }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 border border-dashed border-[#d1d5db] rounded-lg p-6 text-center bg-[#f9fafb]">
+          <p className="text-[13px] text-[#9ca3af]">Belum ada tanda tangan yang diupload</p>
+        </div>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="h-9 px-4 rounded-lg text-[13px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-60"
+          style={{ background: 'linear-gradient(90deg, #1e40af, #10b981)' }}
+        >
+          {uploading ? 'Mengupload...' : ttdUrl ? 'Ganti Tanda Tangan' : 'Upload Tanda Tangan'}
+        </button>
+        {ttdUrl && (
+          <button
+            onClick={handleRemove}
+            className="h-9 px-4 rounded-lg text-[13px] font-medium text-[#ef4444] border border-[#fecaca] bg-white cursor-pointer hover:bg-red-50 transition-colors"
+          >
+            Hapus
+          </button>
+        )}
+      </div>
+
+      {status && (
+        <p className="mt-3 text-[13px]" style={{ color: status.ok ? '#10b981' : '#ef4444' }}>
+          {status.msg}
+        </p>
+      )}
+    </SectionCard>
+  )
+}
+
 export default function SettingsPage() {
   return (
     <div>
@@ -64,7 +171,12 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <div className="max-w-[1280px] mx-auto px-4 py-8 pb-12 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="max-w-[1280px] mx-auto px-4 py-8 pb-12 flex flex-col gap-6">
+
+        {/* TTD Kepala Desa — full width, paling atas */}
+        <TtdSection />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* Village info */}
         <SectionCard
@@ -126,6 +238,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </SectionCard>
+        </div>
         </div>
       </div>
     </div>

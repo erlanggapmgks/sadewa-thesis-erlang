@@ -29,6 +29,14 @@ export const ROUTES = {
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_LETTER_PRINT: '/admin/requests/:id/surat',
 
+  // Kepala Desa
+  KADES_DASHBOARD: '/kades/dashboard',
+  KADES_REQUESTS: '/kades/requests',
+  KADES_REQUEST_DETAIL: '/kades/requests/:id',
+
+  // Verifikasi surat (publik, tanpa login)
+  VERIFY_LETTER: '/verify/:id',
+
   // Fallback
   NOT_FOUND: '*',
 }

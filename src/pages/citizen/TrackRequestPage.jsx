@@ -13,18 +13,21 @@ const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
-  pending:   { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan', bar: '#3b82f6', progress: 25  },
-  approved:  { bg: 'rgba(245,158,11,0.1)',  text: '#f59e0b', label: 'Disetujui',         bar: '#f59e0b', progress: 75  },
-  rejected:  { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak',           bar: '#ef4444', progress: 100 },
-  completed: { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Selesai',           bar: '#10b981', progress: 100 },
+  pending:      { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan',     bar: '#3b82f6', progress: 25  },
+  kades_review: { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed', label: 'Proses Penandatanganan', bar: '#7c3aed', progress: 60  },
+  signed:       { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Sedang Diproses Admin',  bar: '#f59e0b', progress: 80  },
+  approved:     { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Disetujui',              bar: '#f59e0b', progress: 80  },
+  rejected:     { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Ditolak',                bar: '#ef4444', progress: 100 },
+  completed:    { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Surat Tersedia',         bar: '#10b981', progress: 100 },
 }
 
 const FILTER_OPTIONS = [
-  { value: 'semua',     label: 'Semua Status' },
-  { value: 'pending',   label: 'Menunggu Tinjauan' },
-  { value: 'approved',  label: 'Disetujui' },
-  { value: 'rejected',  label: 'Ditolak' },
-  { value: 'completed', label: 'Selesai' },
+  { value: 'semua',        label: 'Semua Status' },
+  { value: 'pending',      label: 'Menunggu Tinjauan' },
+  { value: 'kades_review', label: 'Proses Penandatanganan' },
+  { value: 'signed',       label: 'Sedang Diproses Admin' },
+  { value: 'rejected',     label: 'Ditolak' },
+  { value: 'completed',    label: 'Surat Tersedia' },
 ]
 
 const DEMO_REQUESTS = [
@@ -54,7 +57,7 @@ function FilterIcon() {
 
 function DownloadIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.75" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
     </svg>
   )
@@ -207,10 +210,11 @@ export default function TrackRequestPage() {
                           <button
                             type="button"
                             onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent"
-                            title="Lihat & unduh surat"
+                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
+                            style={{ background: '#10b981' }}
                           >
                             <DownloadIcon />
+                            Lihat Surat
                           </button>
                         )}
                       </td>

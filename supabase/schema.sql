@@ -168,5 +168,121 @@ CREATE POLICY "admin_read_all_extracted" ON public.extracted_documents
 
 
 -- ────────────────────────────────────────────────────────────
+-- 5. MIGRASI: Role kepala_desa + alur 3 role
+--    Aman dijalankan berulang kali (IF NOT EXISTS / DROP IF EXISTS)
+-- ────────────────────────────────────────────────────────────
+
+-- 5a. Tambah role kepala_desa ke profiles
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_role_check
+    CHECK (role IN ('citizen', 'admin', 'kepala_desa'));
+
+-- 5b. Tambah status kades_review & signed ke service_requests
+ALTER TABLE public.service_requests
+  DROP CONSTRAINT IF EXISTS service_requests_status_check;
+ALTER TABLE public.service_requests
+  ADD CONSTRAINT service_requests_status_check
+    CHECK (status IN ('pending','kades_review','signed','approved','rejected','completed'));
+
+-- 5c. Tambah kolom kades + additional_data ke service_requests
+ALTER TABLE public.service_requests
+  ADD COLUMN IF NOT EXISTS kades_notes       TEXT,
+  ADD COLUMN IF NOT EXISTS kades_reviewed_by UUID REFERENCES public.profiles(id),
+  ADD COLUMN IF NOT EXISTS signed_at         TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS additional_data   JSONB;
+
+-- 5d. RLS policies untuk kepala_desa
+DROP POLICY IF EXISTS "kades_read_forwarded_requests"  ON public.service_requests;
+DROP POLICY IF EXISTS "kades_update_requests"          ON public.service_requests;
+DROP POLICY IF EXISTS "kades_read_all_profiles"        ON public.profiles;
+DROP POLICY IF EXISTS "kades_read_all_extracted"       ON public.extracted_documents;
+
+-- Kepala desa bisa baca surat yang sudah diteruskan (kades_review) atau sudah TTD
+CREATE POLICY "kades_read_forwarded_requests" ON public.service_requests
+  FOR SELECT USING (
+    public.get_my_role() = 'kepala_desa'
+    AND status IN ('kades_review', 'signed', 'rejected')
+  );
+
+-- Kepala desa bisa update (TTD atau tolak) surat
+CREATE POLICY "kades_update_requests" ON public.service_requests
+  FOR UPDATE USING (public.get_my_role() = 'kepala_desa');
+
+-- Kepala desa bisa baca profil pemohon
+CREATE POLICY "kades_read_all_profiles" ON public.profiles
+  FOR SELECT USING (public.get_my_role() = 'kepala_desa');
+
+-- Kepala desa bisa baca hasil OCR
+CREATE POLICY "kades_read_all_extracted" ON public.extracted_documents
+  FOR SELECT USING (public.get_my_role() = 'kepala_desa');
+
+
+-- ────────────────────────────────────────────────────────────
+-- 6. VILLAGE_SETTINGS — konfigurasi desa (TTD URL, dll.)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.village_settings (
+  key        TEXT        PRIMARY KEY,
+  value      TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.village_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "public_read_settings" ON public.village_settings;
+DROP POLICY IF EXISTS "admin_write_settings"  ON public.village_settings;
+
+-- Semua orang bisa baca (TTD URL perlu diakses tanpa login untuk print surat)
+CREATE POLICY "public_read_settings" ON public.village_settings
+  FOR SELECT USING (true);
+
+-- Hanya admin yang bisa tulis
+CREATE POLICY "admin_write_settings" ON public.village_settings
+  FOR ALL USING (public.get_my_role() = 'admin');
+
+-- Seed default key
+INSERT INTO public.village_settings (key, value)
+  VALUES ('ttd_url', null)
+  ON CONFLICT (key) DO NOTHING;
+
+
+-- ────────────────────────────────────────────────────────────
+-- 7. FUNCTION: verify_letter — publik, bypass RLS
+--    Dipakai halaman /verify/:id tanpa login
+-- ────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.verify_letter(letter_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result JSON;
+BEGIN
+  SELECT json_build_object(
+    'valid',        true,
+    'service_type', sr.service_type,
+    'status',       sr.status,
+    'created_at',   sr.created_at,
+    'signed_at',    sr.signed_at,
+    'full_name',    p.full_name
+  )
+  INTO result
+  FROM public.service_requests sr
+  JOIN public.profiles p ON p.id = sr.user_id
+  WHERE sr.id = letter_id AND sr.status = 'completed';
+
+  RETURN COALESCE(result, json_build_object('valid', false));
+END;
+$$;
+
+-- Izinkan anon (belum login) memanggil fungsi ini
+GRANT EXECUTE ON FUNCTION public.verify_letter(UUID) TO anon;
+
+
+-- ────────────────────────────────────────────────────────────
 -- SELESAI
 -- ────────────────────────────────────────────────────────────
