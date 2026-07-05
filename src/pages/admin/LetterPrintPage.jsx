@@ -378,7 +378,7 @@ export default function LetterPrintPage() {
                 />
               )}
               <p style={{ fontWeight: 'bold', textDecoration: 'underline', marginTop: ttdUrl ? '0' : undefined }}>
-                Wijisianti Priatna, S.Pd.
+                Widjisianti Priatna, S.Pd.
               </p>
               <p style={{ marginTop: '3px' }}>Kepala Desa Wates</p>
             </div>

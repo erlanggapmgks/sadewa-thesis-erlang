@@ -65,7 +65,7 @@ const BATAS_WILAYAH = [
 ]
 
 const STRUKTUR = [
-  { name: 'Wijisianti Priatna, S.Pd.', role: 'Kepala Desa',            period: 'Menjabat' },
+  { name: 'Widjisianti Priatna, S.Pd.', role: 'Kepala Desa',            period: 'Menjabat' },
   { name: 'Lilik Eko Prasetyo, S.AP.', role: 'Sekretaris Desa',        period: 'Menjabat' },
   { name: 'Hartini',                   role: 'Kepala Dusun Wates',     period: 'Menjabat' },
   { name: 'Endang Susilowati',         role: 'Kepala Dusun Pulorejo',  period: 'Menjabat' },
