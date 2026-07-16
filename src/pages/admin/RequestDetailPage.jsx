@@ -129,6 +129,64 @@ function CompletenessRow({ label, ok }) {
   )
 }
 
+// Normalise strings for comparison: lowercase, strip extra spaces & punctuation
+function normaliseStr(s) {
+  if (!s) return ''
+  return s.toLowerCase().replace(/[.\-_,]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function fieldMatches(profileVal, ocrVal) {
+  if (!profileVal || !ocrVal) return null // can't compare
+  const a = normaliseStr(String(profileVal))
+  const b = normaliseStr(String(ocrVal))
+  if (a === b) return true
+  // Partial match: one contains the other (handles truncated OCR)
+  if (a.length > 3 && b.length > 3 && (a.includes(b) || b.includes(a))) return true
+  // For NIK: exact must match
+  return false
+}
+
+function CompareRow({ label, profileValue, ocrValue, mono = false }) {
+  const match = fieldMatches(profileValue, ocrValue)
+  const missing = !ocrValue
+  const fontStyle = mono ? { fontFamily: 'Menlo, monospace', letterSpacing: 0 } : {}
+
+  return (
+    <div className="grid grid-cols-[140px_1fr_1fr] gap-x-4 py-2.5 border-b border-[#f3f4f6] last:border-0 items-start">
+      <span className="text-[12px] text-[#6b7280] pt-0.5">{label}</span>
+      {/* Profile value (source of truth) */}
+      <span className="text-[13px] text-[#1a1a1a]" style={fontStyle}>
+        {profileValue || <span className="text-[#9ca3af]">—</span>}
+      </span>
+      {/* OCR value with match indicator */}
+      <div className="flex items-start gap-1.5">
+        <span
+          className="text-[13px]"
+          style={{
+            ...fontStyle,
+            color: missing ? '#9ca3af' : match === false ? '#dc2626' : match === true ? '#059669' : '#1a1a1a',
+          }}
+        >
+          {ocrValue || <span style={{ color: '#9ca3af' }}>—</span>}
+        </span>
+        {match === false && !missing && (
+          <span
+            className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
+            style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', marginTop: 1 }}
+          >
+            ≠ Beda
+          </span>
+        )}
+        {match === true && (
+          <span style={{ color: '#10b981', marginTop: 1 }}>
+            <CheckIcon size={13} />
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RequestDetailPage() {
@@ -285,34 +343,80 @@ export default function RequestDetailPage() {
                   </div>
                 </div>
 
-                {/* Completeness */}
-                <div>
-                  <p className="text-[13px] font-medium text-[#1a1a1a] mb-2">Kelengkapan Data</p>
-                  <div className="grid grid-cols-2 gap-x-6">
-                    <CompletenessRow label="Nama Lengkap"   ok={isComplete} />
-                    <CompletenessRow label="NIK"             ok={isComplete} />
-                    <CompletenessRow label="Tanggal Lahir"  ok={isComplete} />
-                    <CompletenessRow label="Alamat"          ok={isComplete} />
-                  </div>
-                </div>
-
-                {/* Extracted data */}
+                {/* Side-by-side comparison: profile data vs OCR data */}
                 {extracted && (
                   <div>
-                    <p className="text-[13px] font-medium text-[#1a1a1a] mb-3">
-                      Data Hasil Pembacaan OCR
+                    <p className="text-[13px] font-medium text-[#1a1a1a] mb-1">
+                      Perbandingan Data
                       {extracted.confidence && (
                         <span className="ml-2 text-[11px] text-green-600 font-normal">
-                          {Math.round(extracted.confidence * 100)}% akurasi
+                          {Math.round(extracted.confidence * 100)}% akurasi OCR
                         </span>
                       )}
                     </p>
-                    <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4 grid grid-cols-2 gap-x-8 gap-y-4">
-                      <InfoRow label="Nama Lengkap" value={extracted.full_name} />
-                      <InfoRow label="NIK"           value={extracted.nik} mono />
-                      <InfoRow label="Tempat, Tgl Lahir" value={extracted.birth_date} />
-                      <InfoRow label="Alamat"        value={extracted.address} />
+                    <p className="text-[12px] text-[#6b7280] mb-3">
+                      Bandingkan data profil pendaftar dengan hasil baca OCR dari KTP yang diunggah.
+                    </p>
+
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[140px_1fr_1fr] gap-x-4 pb-2 border-b border-[#e5e7eb] mb-1">
+                      <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Field</span>
+                      <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Data Profil</span>
+                      <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Hasil OCR KTP</span>
                     </div>
+
+                    <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-1">
+                      <CompareRow
+                        label="Nama Lengkap"
+                        profileValue={req.profiles?.full_name}
+                        ocrValue={extracted.full_name}
+                      />
+                      <CompareRow
+                        label="NIK"
+                        profileValue={req.profiles?.nik}
+                        ocrValue={extracted.nik}
+                        mono
+                      />
+                      <CompareRow
+                        label="Tempat, Tgl Lahir"
+                        profileValue={null}
+                        ocrValue={extracted.birth_date}
+                      />
+                      <CompareRow
+                        label="Alamat"
+                        profileValue={null}
+                        ocrValue={extracted.address}
+                      />
+                    </div>
+
+                    {/* Mismatch warning */}
+                    {(fieldMatches(req.profiles?.full_name, extracted.full_name) === false ||
+                      fieldMatches(req.profiles?.nik, extracted.nik) === false) && (
+                      <div
+                        className="mt-3 flex items-start gap-2.5 p-3 rounded-lg text-[13px]"
+                        style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <span>
+                          <strong>Data tidak cocok.</strong> Ada perbedaan antara data profil dan hasil OCR.
+                          Periksa foto KTP yang diunggah atau minta warga mengulang pengajuan dengan foto yang lebih jelas.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* All-match confirmation */}
+                    {fieldMatches(req.profiles?.full_name, extracted.full_name) === true &&
+                      fieldMatches(req.profiles?.nik, extracted.nik) === true && (
+                      <div
+                        className="mt-3 flex items-center gap-2.5 p-3 rounded-lg text-[13px]"
+                        style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669' }}
+                      >
+                        <CheckIcon size={15} />
+                        Data profil dan OCR cocok — identitas terverifikasi.
+                      </div>
+                    )}
                   </div>
                 )}
 
