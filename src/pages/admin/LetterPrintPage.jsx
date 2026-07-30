@@ -194,11 +194,12 @@ export default function LetterPrintPage() {
     <>
       {/* Print CSS */}
       <style>{`
+        @page { size: A4; margin: 0; }
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; background: white; }
           .letter-wrap { background: white !important; padding: 0 !important; min-height: unset !important; }
-          .letter-paper { box-shadow: none !important; margin: 0 !important; max-width: 100% !important; padding: 15mm 20mm 20mm !important; }
+          .letter-paper { box-shadow: none !important; margin: 0 !important; max-width: 100% !important; padding: 15mm 20mm 20mm !important; box-sizing: border-box !important; min-height: unset !important; height: auto !important; }
         }
       `}</style>
 
@@ -266,6 +267,7 @@ export default function LetterPrintPage() {
             maxWidth: '210mm',
             minHeight: '297mm',
             padding: '18mm 22mm 24mm',
+            boxSizing: 'border-box',
             boxShadow: '0 8px 40px rgba(0,0,0,0.20)',
             fontFamily: '"Times New Roman", Times, serif',
             fontSize: '12pt',
