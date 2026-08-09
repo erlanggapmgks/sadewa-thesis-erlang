@@ -16,13 +16,14 @@ export async function login(email, password) {
 }
 
 export async function register(email, password, fullName, nik) {
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName, nik } },
   })
   if (error) return { ok: false, message: translateError(error.message) }
-  return { ok: true }
+  const emailConfirmRequired = data?.user && !data?.session
+  return { ok: true, user: data?.user ?? null, session: data?.session ?? null, emailConfirmRequired }
 }
 
 export async function logout() {

@@ -284,5 +284,41 @@ GRANT EXECUTE ON FUNCTION public.verify_letter(UUID) TO anon;
 
 
 -- ────────────────────────────────────────────────────────────
+-- 8. SAFETY-NET: Auto-confirm email saat user mendaftar
+--    (Opsional — dijalankan jika "Confirm Email" belum dimatikan
+--     di Supabase Dashboard. Direkomendasikan untuk keperluan
+--     pengujian / sistem internal tanpa SMTP.)
+--
+--    Cara pakai: blok ini perlu dijalankan manual via Supabase
+--    SQL Editor karena memodifikasi tabel auth.users (skema auth).
+--    Setelah dijalankan, setiap user baru yang dibuat via signUp
+--    otomatis mendapatkan email_confirmed_at = now().
+-- ────────────────────────────────────────────────────────────
+
+-- Uncomment (hapus /* */) di bawah ini lalu jalankan di SQL Editor:
+/*
+CREATE OR REPLACE FUNCTION public.auto_confirm_new_user_email()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = auth
+AS $$
+BEGIN
+  IF NEW.email_confirmed_at IS NULL THEN
+    UPDATE auth.users
+    SET email_confirmed_at = now()
+    WHERE id = NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS auto_confirm_email_on_create ON auth.users;
+CREATE TRIGGER auto_confirm_email_on_create
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.auto_confirm_new_user_email();
+*/
+
+-- ────────────────────────────────────────────────────────────
 -- SELESAI
 -- ────────────────────────────────────────────────────────────

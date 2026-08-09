@@ -111,7 +111,26 @@ export function AuthProvider({ children }) {
     if (!supabase) {
       return { ok: false, message: 'Pendaftaran tidak tersedia dalam mode demo. Hubungkan Supabase terlebih dahulu.' }
     }
-    return authService.register(email, password, fullName, nik)
+    const result = await authService.register(email, password, fullName, nik)
+    if (!result.ok) return result
+    if (result.emailConfirmRequired) {
+      return {
+        ok: false,
+        message: 'Akun berhasil dibuat, tetapi email belum dikonfirmasi. Silakan klik link verifikasi yang dikirim ke email Anda, atau matikan "Confirm Email" di pengaturan Supabase Auth.',
+        needsEmailConfirm: true,
+      }
+    }
+    if (result.user) {
+      await applySession(result.user)
+      const profile = await authService.getProfile(result.user.id)
+      const homeByRole = {
+        admin:       ROUTES.ADMIN_DASHBOARD,
+        kepala_desa: ROUTES.KADES_DASHBOARD,
+      }
+      const resolvedHome = homeByRole[profile?.role] ?? ROUTES.CITIZEN_DASHBOARD
+      return { ok: true, home: resolvedHome }
+    }
+    return { ok: true, home: ROUTES.CITIZEN_DASHBOARD }
   }
 
   async function logout() {

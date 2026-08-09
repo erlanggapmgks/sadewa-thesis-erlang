@@ -49,6 +49,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors]     = useState({})
   const [serverError, setServerError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -70,16 +71,21 @@ export default function RegisterPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setServerError('')
+    setSuccessMessage('')
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
     setSubmitting(true)
     const result = await register(form.email, form.password, form.nama, form.nik)
     setSubmitting(false)
     if (!result.ok) {
-      setServerError(result.message)
+      if (result.needsEmailConfirm) {
+        setSuccessMessage(result.message)
+      } else {
+        setServerError(result.message)
+      }
       return
     }
-    navigate(ROUTES.CITIZEN_DASHBOARD, { replace: true })
+    navigate(result.home ?? ROUTES.CITIZEN_DASHBOARD, { replace: true })
   }
 
   const inputBase =
@@ -253,6 +259,18 @@ export default function RegisterPage() {
           {/* Server error */}
           {serverError && (
             <p className="text-[12px] text-red-500 leading-4">{serverError}</p>
+          )}
+
+          {/* Success with info (e.g. email confirm still needed) */}
+          {successMessage && (
+            <div className="p-3 rounded-md bg-amber-50 border border-amber-200">
+              <p className="text-[13px] text-amber-800 leading-5 font-medium mb-1">
+                Pendaftaran Berhasil
+              </p>
+              <p className="text-[12px] text-amber-700 leading-5">
+                {successMessage}
+              </p>
+            </div>
           )}
 
           {/* Submit */}
