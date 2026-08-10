@@ -509,20 +509,20 @@ export default function RequestDocumentPage() {
                             setAdditionalErrors({})
                             setStep1Errors(e => ({ ...e, service: '' }))
                           }}
-                          className="text-left p-4 rounded-lg border-2 transition-all cursor-pointer"
+                          className="text-center sm:text-left p-4 rounded-lg border-2 transition-all cursor-pointer"
                           style={{
                             borderColor: sel ? '#1e5fb8' : '#e5e7eb',
                             background: sel ? 'rgba(30,95,184,0.04)' : 'white',
                           }}
                         >
-                          <div className="flex items-start gap-3">
+                          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3">
                             <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
                               style={{ background: sel ? 'rgba(30,95,184,0.1)' : '#f3f4f6' }}
                             >
                               <DocumentIcon color={sel ? '#1e5fb8' : '#6b7280'} size={16} />
                             </div>
-                            <div>
+                            <div className="w-full">
                               <p className="font-medium text-[13px] text-[#1a1a1a] leading-5">{svc.label}</p>
                               <p className="mt-0.5 text-[11px] text-[#6b7280]">{svc.desc}</p>
                               <p className="mt-1 text-[11px] text-[#9ca3af]">Estimasi: {svc.duration}</p>
