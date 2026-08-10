@@ -9,16 +9,16 @@ import { ROUTES } from '../../routes/routes'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
   pending:      { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan',     bar: '#3b82f6', progress: 25  },
-  kades_review: { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed', label: 'Proses Penandatanganan', bar: '#7c3aed', progress: 60  },
+  kades_review: { bg: 'rgba(30,95,184,0.1)', text: '#1e5fb8', label: 'Proses Penandatanganan', bar: '#1e5fb8', progress: 60  },
   signed:       { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Sedang Diproses Admin',  bar: '#f59e0b', progress: 80  },
   approved:     { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Disetujui',              bar: '#f59e0b', progress: 80  },
   rejected:     { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Ditolak',                bar: '#ef4444', progress: 100 },
-  completed:    { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Surat Tersedia',         bar: '#10b981', progress: 100 },
+  completed:    { bg: 'rgba(22,163,114,0.1)', text: '#16a372', label: 'Surat Tersedia',         bar: '#16a372', progress: 100 },
 }
 
 const FILTER_OPTIONS = [
@@ -142,7 +142,7 @@ export default function TrackRequestPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Cari berdasarkan ID atau nama layanan..."
-                className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-lg pl-[41px] pr-4 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+                className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-lg pl-[41px] pr-4 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -150,7 +150,7 @@ export default function TrackRequestPage() {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="h-[42px] bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e40af] cursor-pointer"
+                className="h-[42px] bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] cursor-pointer"
               >
                 {FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -168,9 +168,9 @@ export default function TrackRequestPage() {
 
           {loading ? (
             <div className="py-16 flex justify-center">
-              <svg className="animate-spin w-6 h-6 text-[#1e40af]" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </div>
           ) : (
@@ -211,7 +211,7 @@ export default function TrackRequestPage() {
                             type="button"
                             onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
                             className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
-                            style={{ background: '#10b981' }}
+                            style={{ background: '#16a372' }}
                           >
                             <DownloadIcon />
                             Lihat Surat

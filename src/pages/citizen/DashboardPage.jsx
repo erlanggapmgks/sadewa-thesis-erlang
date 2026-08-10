@@ -9,14 +9,14 @@ import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
   pending:   { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan' },
   approved:  { bg: 'rgba(245,158,11,0.1)',  text: '#f59e0b', label: 'Disetujui' },
   rejected:  { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak' },
-  completed: { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Selesai' },
+  completed: { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Selesai' },
 }
 
 const DEMO_REQUESTS = [
@@ -28,7 +28,7 @@ const DEMO_REQUESTS = [
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
-function ClipboardIcon({ color = '#1e40af' }) {
+function ClipboardIcon({ color = '#1e5fb8' }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" />
@@ -46,7 +46,7 @@ function ClockIcon() {
 
 function CheckCircleIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.75" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   )
@@ -120,9 +120,9 @@ export default function CitizenDashboard() {
   const rejected  = requests.filter(r => r.status === 'rejected').length
 
   const STATS = [
-    { label: 'Total Permohonan', value: total,     iconBg: 'rgba(30,64,175,0.1)',  icon: <ClipboardIcon /> },
+    { label: 'Total Permohonan', value: total,     iconBg: 'rgba(30,95,184,0.1)',  icon: <ClipboardIcon /> },
     { label: 'Sedang Diproses',  value: pending,   iconBg: 'rgba(245,158,11,0.1)', icon: <ClockIcon /> },
-    { label: 'Selesai',          value: completed, iconBg: 'rgba(16,185,129,0.1)', icon: <CheckCircleIcon /> },
+    { label: 'Selesai',          value: completed, iconBg: 'rgba(22,163,114,0.1)', icon: <CheckCircleIcon /> },
     { label: 'Ditolak',          value: rejected,  iconBg: 'rgba(239,68,68,0.1)',  icon: <XCircleIcon /> },
   ]
 
@@ -131,12 +131,12 @@ export default function CitizenDashboard() {
   return (
     <div>
       {/* Hero */}
-      <section style={{ background: HERO_GRADIENT }} className="py-8">
+      <section style={{ background: HERO_GRADIENT }} className="py-12">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
             Selamat Datang, {user?.name ?? 'Warga'}
           </h1>
-          <p className="mt-2 text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          <p className="mt-2 text-[14px] sm:text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Kelola permohonan administrasi dan pantau status pengajuan Anda
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function CitizenDashboard() {
 
       <div className="max-w-[1280px] mx-auto px-4">
         {/* Stat cards */}
-        <div className="relative -mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative -mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {STATS.map(s => (
             <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-5 flex items-center justify-between" style={CARD_SHADOW}>
               <div>
@@ -165,7 +165,7 @@ export default function CitizenDashboard() {
           <Link
             to={ROUTES.CITIZEN_REQUEST}
             className="flex items-center gap-4 p-6 rounded-lg border border-[#e5e7eb] no-underline hover:opacity-90 transition-opacity"
-            style={{ background: '#1e40af', ...CARD_SHADOW }}
+            style={{ background: '#1e5fb8', ...CARD_SHADOW }}
           >
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -204,7 +204,7 @@ export default function CitizenDashboard() {
               ) : recent.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="text-[14px] text-[#6b7280]">Belum ada permohonan.</p>
-                  <Link to={ROUTES.CITIZEN_REQUEST} className="mt-3 inline-block text-[14px] font-medium text-[#1e40af] no-underline hover:underline">
+                  <Link to={ROUTES.CITIZEN_REQUEST} className="mt-3 inline-block text-[14px] font-medium text-[#1e5fb8] no-underline hover:underline">
                     Ajukan sekarang →
                   </Link>
                 </div>

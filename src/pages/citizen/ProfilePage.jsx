@@ -8,14 +8,14 @@ import { formatDate } from '../../utils/formatDate'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_CFG = {
   pending:   { label: 'Menunggu',  color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
   approved:  { label: 'Disetujui', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
   rejected:  { label: 'Ditolak',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)'  },
-  completed: { label: 'Selesai',   color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+  completed: { label: 'Selesai',   color: '#16a372', bg: 'rgba(22,163,114,0.1)' },
 }
 
 const DEMO_REQUESTS = [
@@ -134,7 +134,7 @@ export default function ProfilePage() {
               <p className="font-semibold text-[18px] text-[#1a1a1a] leading-6">{user?.name ?? '—'}</p>
               <p className="text-[13px] text-[#6b7280] mt-1">{user?.email ?? '—'}</p>
               <span className="mt-3 px-3 py-1 rounded-full text-[12px] font-medium"
-                style={{ background: 'rgba(30,64,175,0.1)', color: '#1e40af' }}>
+                style={{ background: 'rgba(30,95,184,0.1)', color: '#1e5fb8' }}>
                 Warga
               </span>
               {user?.nik && (
@@ -148,8 +148,8 @@ export default function ProfilePage() {
             <div className="bg-white border border-[#e5e7eb] rounded-lg p-5" style={CARD_SHADOW}>
               <p className="text-[13px] font-medium text-[#6b7280] uppercase tracking-wide mb-4">Statistik Permohonan</p>
               {[
-                { label: 'Total', value: total,    color: '#1e40af' },
-                { label: 'Selesai', value: done,   color: '#10b981' },
+                { label: 'Total', value: total,    color: '#1e5fb8' },
+                { label: 'Selesai', value: done,   color: '#16a372' },
                 { label: 'Dalam Proses', value: pending,  color: '#f59e0b' },
                 { label: 'Ditolak', value: rejected, color: '#ef4444' },
               ].map(s => (
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                       value={name}
                       onChange={e => setName(e.target.value)}
                       placeholder="Nama sesuai KTP"
-                      className="w-full h-10 px-3.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+                      className="w-full h-10 px-3.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
                     />
                   </div>
 
@@ -197,7 +197,7 @@ export default function ProfilePage() {
                       value={nik}
                       onChange={e => setNik(e.target.value.replace(/\D/g, '').slice(0, 16))}
                       placeholder="16 digit NIK"
-                      className="w-full h-10 px-3.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+                      className="w-full h-10 px-3.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
                       style={{ fontFamily: 'Menlo, monospace', letterSpacing: '1px' }}
                     />
                   </div>
@@ -245,9 +245,9 @@ export default function ProfilePage() {
               </div>
               {loadingReq ? (
                 <div className="flex justify-center py-10">
-                  <svg className="animate-spin w-6 h-6 text-[#1e40af]" viewBox="0 0 24 24" fill="none">
+                  <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
                   </svg>
                 </div>
               ) : requests.length === 0 ? (

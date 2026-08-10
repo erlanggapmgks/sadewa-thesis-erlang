@@ -9,20 +9,20 @@ import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
   pending:      { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan' },
-  kades_review: { bg: 'rgba(124,58,237,0.1)', text: '#7c3aed', label: 'Menunggu TTD Kades' },
-  signed:       { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Sudah Ditandatangani' },
+  kades_review: { bg: 'rgba(30,95,184,0.1)', text: '#1e5fb8', label: 'Menunggu TTD Kades' },
+  signed:       { bg: 'rgba(22,163,114,0.1)', text: '#16a372', label: 'Sudah Ditandatangani' },
   approved:     { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Disetujui' },
   rejected:     { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Ditolak' },
-  completed:    { bg: 'rgba(16,185,129,0.1)', text: '#10b981', label: 'Selesai' },
+  completed:    { bg: 'rgba(22,163,114,0.1)', text: '#16a372', label: 'Selesai' },
 }
 
 const QUALITY_MAP = {
-  good:    { bg: 'rgba(16,185,129,0.1)',  text: '#059669', label: 'Kualitas Baik' },
+  good:    { bg: 'rgba(22,163,114,0.1)',  text: '#059669', label: 'Kualitas Baik' },
   blurred: { bg: 'rgba(245,158,11,0.1)',  text: '#d97706', label: 'Foto Buram' },
   dark:    { bg: 'rgba(245,158,11,0.1)',  text: '#d97706', label: 'Foto Terlalu Gelap' },
   invalid: { bg: 'rgba(239,68,68,0.1)',   text: '#dc2626', label: 'Format Tidak Valid' },
@@ -118,7 +118,7 @@ function CompletenessRow({ label, ok }) {
     <div className="flex items-center gap-2.5 py-1.5">
       <div
         className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-        style={{ background: ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)' }}
+        style={{ background: ok ? 'rgba(22,163,114,0.12)' : 'rgba(239,68,68,0.12)' }}
       >
         {ok
           ? <CheckIcon size={11} />
@@ -178,7 +178,7 @@ function CompareRow({ label, profileValue, ocrValue, mono = false }) {
           </span>
         )}
         {match === true && (
-          <span style={{ color: '#10b981', marginTop: 1 }}>
+          <span style={{ color: '#16a372', marginTop: 1 }}>
             <CheckIcon size={13} />
           </span>
         )}
@@ -238,9 +238,9 @@ export default function RequestDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <svg className="animate-spin w-7 h-7 text-[#1e40af]" viewBox="0 0 24 24" fill="none">
+        <svg className="animate-spin w-7 h-7 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
         </svg>
       </div>
     )
@@ -284,8 +284,8 @@ export default function RequestDetailPage() {
           <div
             className="mb-6 rounded-lg px-4 py-3 flex items-center gap-3 text-[14px] font-medium"
             style={{
-              background: action === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(124,58,237,0.1)',
-              color:      action === 'rejected' ? '#ef4444' : '#7c3aed',
+              background: action === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(30,95,184,0.1)',
+              color:      action === 'rejected' ? '#ef4444' : '#1e5fb8',
             }}
           >
             {action === 'rejected' ? <XMarkIcon size={18} /> : <CheckIcon size={18} />}
@@ -323,7 +323,7 @@ export default function RequestDetailPage() {
 
             {/* AI Smart Processing */}
             <SectionCard
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>}
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>}
               title="Hasil Verifikasi AI"
             >
               <div className="flex flex-col gap-6">
@@ -411,7 +411,7 @@ export default function RequestDetailPage() {
                       fieldMatches(req.profiles?.nik, extracted.nik) === true && (
                       <div
                         className="mt-3 flex items-center gap-2.5 p-3 rounded-lg text-[13px]"
-                        style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669' }}
+                        style={{ background: 'rgba(22,163,114,0.07)', border: '1px solid rgba(22,163,114,0.2)', color: '#059669' }}
                       >
                         <CheckIcon size={15} />
                         Data profil dan OCR cocok — identitas terverifikasi.
@@ -423,13 +423,13 @@ export default function RequestDetailPage() {
                 {/* Recommended letter type */}
                 {req.recommended_letter_type && (
                   <div className="flex items-start gap-3 p-4 rounded-lg"
-                    style={{ background: 'rgba(30,64,175,0.05)', border: '1px solid rgba(30,64,175,0.12)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" className="shrink-0 mt-0.5">
+                    style={{ background: 'rgba(30,95,184,0.05)', border: '1px solid rgba(30,95,184,0.12)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="2" className="shrink-0 mt-0.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                     </svg>
                     <div>
-                      <p className="text-[13px] font-medium text-[#1e40af]">Rekomendasi AI</p>
-                      <p className="text-[13px] text-[#1e40af] mt-0.5">
+                      <p className="text-[13px] font-medium text-[#1e5fb8]">Rekomendasi AI</p>
+                      <p className="text-[13px] text-[#1e5fb8] mt-0.5">
                         {SERVICE_TYPE_LABELS[req.recommended_letter_type] ?? req.recommended_letter_type}
                       </p>
                     </div>
@@ -474,7 +474,7 @@ export default function RequestDetailPage() {
                 disabled={isDone}
                 placeholder="Tambahkan catatan untuk pemohon (opsional)..."
                 rows={4}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3 text-[14px] text-[#1a1a1a] leading-5 resize-none focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent disabled:opacity-60"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3 text-[14px] text-[#1a1a1a] leading-5 resize-none focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent disabled:opacity-60"
               />
             </SectionCard>
           </div>
@@ -517,7 +517,7 @@ export default function RequestDetailPage() {
                     onClick={() => handleAction('kades_review')}
                     disabled={submitting}
                     className="w-full h-11 rounded-lg flex items-center justify-center gap-2 text-[15px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 disabled:opacity-60"
-                    style={{ background: '#7c3aed' }}
+                    style={{ background: '#1e5fb8' }}
                   >
                     <CheckIcon size={18} />
                     {submitting ? 'Menyimpan...' : 'Teruskan ke Kepala Desa'}
@@ -538,7 +538,7 @@ export default function RequestDetailPage() {
             {/* Info saat menunggu TTD kades */}
             {isKadesReview && (
               <div className="rounded-lg px-5 py-4 text-[13px]"
-                style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: '#7c3aed' }}>
+                style={{ background: 'rgba(30,95,184,0.06)', border: '1px solid rgba(30,95,184,0.15)', color: '#1e5fb8' }}>
                 <p className="font-medium mb-1">Menunggu tanda tangan Kepala Desa</p>
                 <p style={{ color: '#6b7280' }}>Permohonan sudah diteruskan. Kepala Desa akan menandatangani atau menolak.</p>
               </div>
@@ -552,7 +552,7 @@ export default function RequestDetailPage() {
                     onClick={handleGenerateLetter}
                     disabled={completing}
                     className="w-full h-11 rounded-lg flex items-center justify-center gap-2 text-[15px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 disabled:opacity-60"
-                    style={{ background: 'linear-gradient(90deg, #1e40af, #10b981)' }}
+                    style={{ background: '#1e5fb8' }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />

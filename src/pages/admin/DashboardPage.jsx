@@ -8,7 +8,7 @@ import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const DEMO_REQUESTS = [
@@ -55,7 +55,7 @@ function ClockIcon() {
 
 function CheckCircleIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.75">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.75">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   )
@@ -63,7 +63,7 @@ function CheckCircleIcon() {
 
 function ChartBarIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
     </svg>
   )
@@ -116,8 +116,8 @@ export default function AdminDashboard() {
     { label: 'Menunggu Tinjauan', value: pending,   iconBg: 'rgba(245,158,11,0.1)', icon: <ClockIcon /> },
     { label: 'Sedang Diproses',   value: approved,  iconBg: 'rgba(59,130,246,0.1)',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg> },
-    { label: 'Selesai Hari Ini',  value: doneToday, iconBg: 'rgba(16,185,129,0.1)', icon: <CheckCircleIcon /> },
-    { label: 'Total Permohonan',  value: total,     iconBg: 'rgba(30,64,175,0.1)',  icon: <ChartBarIcon /> },
+    { label: 'Selesai Hari Ini',  value: doneToday, iconBg: 'rgba(22,163,114,0.1)', icon: <CheckCircleIcon /> },
+    { label: 'Total Permohonan',  value: total,     iconBg: 'rgba(30,95,184,0.1)',  icon: <ChartBarIcon /> },
   ]
 
   // Queue: pending + approved, most recent first
@@ -135,10 +135,10 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <section style={{ background: HERO_GRADIENT }} className="py-8">
+      <section style={{ background: HERO_GRADIENT }} className="py-12">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Dashboard Admin</h1>
-          <p className="mt-2 text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Dashboard Admin</h1>
+          <p className="mt-2 text-[14px] sm:text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Tinjau dan proses permohonan warga
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-[1280px] mx-auto px-4 pb-12">
         {/* Stat cards */}
-        <div className="relative -mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative -mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {STATS.map(s => (
             <div key={s.label} className="bg-white border border-[#e5e7eb] rounded-lg p-5 flex items-center justify-between" style={CARD_SHADOW}>
               <div>
@@ -187,9 +187,9 @@ export default function AdminDashboard() {
           <div className="px-6 py-5 flex flex-col gap-4">
             {loading ? (
               <div className="py-8 flex justify-center">
-                <svg className="animate-spin w-6 h-6 text-[#1e40af]" viewBox="0 0 24 24" fill="none">
+                <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
                 </svg>
               </div>
             ) : filtered.length === 0 ? (
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-start gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                          style={{ background: 'rgba(30,64,175,0.08)' }}>
+                          style={{ background: 'rgba(30,95,184,0.08)' }}>
                           <DocumentIcon />
                         </div>
                         <div className="min-w-0">
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                         </span>
                         <button
                           onClick={() => navigate(ROUTES.ADMIN_REQUEST_DETAIL.replace(':id', req.id))}
-                          className="flex items-center gap-1.5 h-8 px-3 bg-[#1e40af] rounded-lg text-[13px] font-medium text-white hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
+                          className="flex items-center gap-1.5 h-8 px-3 bg-[#1e5fb8] rounded-lg text-[13px] font-medium text-white hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
                         >
                           Proses <ArrowRightIcon />
                         </button>

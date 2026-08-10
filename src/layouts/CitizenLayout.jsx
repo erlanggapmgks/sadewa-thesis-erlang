@@ -4,7 +4,7 @@ import Footer from '../components/layout/Footer'
 import { ROUTES } from '../routes/routes'
 import { useAuthContext } from '../context/AuthContext'
 
-const LOGO_GRADIENT = 'linear-gradient(135deg, #1e40af 0%, #10b981 100%)'
+const LOGO_GRADIENT = '#1e5fb8'
 
 const NAV_ITEMS = [
   {
@@ -38,12 +38,22 @@ const NAV_ITEMS = [
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
-function LogoIcon() {
+const SADEWA_LOGO_SRC = '/sadewa-logo.png'
+
+function LogoIcon({ size = 56 }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-      <path d="M2 20V8.5L12 3l10 5.5V20h-5v-6H7v6H2z" />
-      <path d="M9 20v-4h6v4" />
-    </svg>
+    <img
+      src={SADEWA_LOGO_SRC}
+      alt="Logo SADEWA"
+      width={size}
+      height={size}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        objectFit: 'contain',
+        display: 'block',
+      }}
+    />
   )
 }
 
@@ -109,10 +119,7 @@ export default function CitizenLayout() {
           {/* Left: Logo + nav */}
           <div className="flex items-center gap-6 min-w-0">
             <Link to={ROUTES.CITIZEN_DASHBOARD} className="flex items-center gap-2 no-underline shrink-0">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: LOGO_GRADIENT }}>
-                <LogoIcon />
-              </div>
-              <span className="font-semibold text-[15px] text-[#1a1a1a] tracking-[-0.3px]">SADEWA</span>
+              <LogoIcon size={56} />
             </Link>
 
             {/* Desktop nav links */}
@@ -125,8 +132,8 @@ export default function CitizenLayout() {
                     to={item.to}
                     className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors no-underline"
                     style={{
-                      background: active ? 'rgba(30,64,175,0.08)' : 'transparent',
-                      color:      active ? '#1e40af' : '#6b7280',
+                      background: active ? 'rgba(30,95,184,0.08)' : 'transparent',
+                      color:      active ? '#1e5fb8' : '#6b7280',
                     }}
                   >
                     {item.icon}
@@ -142,7 +149,7 @@ export default function CitizenLayout() {
 
             {/* Bell */}
             <button
-              className="relative p-2 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent hidden sm:flex"
+              className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent hidden sm:flex items-center justify-center shrink-0"
               aria-label="Notifikasi"
             >
               <BellIcon />
@@ -177,7 +184,7 @@ export default function CitizenLayout() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMenuOpen(o => !o)}
-              className="md:hidden p-2 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent"
+              className="md:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center shrink-0"
               aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
             >
               {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
@@ -201,8 +208,8 @@ export default function CitizenLayout() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2.5 h-10 px-3 rounded-lg text-[14px] font-medium transition-colors no-underline"
                     style={{
-                      background: active ? 'rgba(30,64,175,0.08)' : 'transparent',
-                      color:      active ? '#1e40af' : '#374151',
+                      background: active ? 'rgba(30,95,184,0.08)' : 'transparent',
+                      color:      active ? '#1e5fb8' : '#374151',
                     }}
                   >
                     {item.icon}

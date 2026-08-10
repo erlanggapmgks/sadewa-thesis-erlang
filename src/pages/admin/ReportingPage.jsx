@@ -6,14 +6,14 @@ import { formatDate } from '../../utils/formatDate'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_CFG = {
   pending:   { label: 'Menunggu',  color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
   approved:  { label: 'Disetujui', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
   rejected:  { label: 'Ditolak',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)'  },
-  completed: { label: 'Selesai',   color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+  completed: { label: 'Selesai',   color: '#16a372', bg: 'rgba(22,163,114,0.1)' },
 }
 
 const DEMO_REQUESTS = [
@@ -58,8 +58,8 @@ export default function ReportingPage() {
   const approved  = requests.filter(r => r.status === 'approved').length
 
   const STATS = [
-    { label: 'Total Permohonan', value: total,   color: '#1e40af', bg: 'rgba(30,64,175,0.1)' },
-    { label: 'Selesai',          value: done,    color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+    { label: 'Total Permohonan', value: total,   color: '#1e5fb8', bg: 'rgba(30,95,184,0.1)' },
+    { label: 'Selesai',          value: done,    color: '#16a372', bg: 'rgba(22,163,114,0.1)' },
     { label: 'Menunggu',         value: pending, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
     { label: 'Ditolak',          value: rejected,color: '#ef4444', bg: 'rgba(239,68,68,0.1)'  },
   ]
@@ -94,9 +94,9 @@ export default function ReportingPage() {
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 h-10 px-5 rounded-lg text-[14px] font-semibold bg-white cursor-pointer border-0 hover:opacity-90 transition-opacity shrink-0"
-            style={{ color: '#1e40af' }}
+            style={{ color: '#1e5fb8' }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
             </svg>
             Cetak Laporan
@@ -146,7 +146,7 @@ export default function ReportingPage() {
                   <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: '#f3f4f6' }}>
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${(x.count / maxType) * 100}%`, background: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 100%)', transition: 'width 0.6s ease' }}
+                      style={{ width: `${(x.count / maxType) * 100}%`, background: '#1e5fb8', transition: 'width 0.6s ease' }}
                     />
                   </div>
                   <div className="w-12 text-right shrink-0">

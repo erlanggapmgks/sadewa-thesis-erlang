@@ -3,7 +3,7 @@ const STEPS = [
     number: '01',
     title: 'Daftar & Masuk',
     description: 'Buat akun dengan email dan NIK Anda, lalu masuk ke portal SADEWA.',
-    color: '#1e40af',
+    color: '#1e5fb8',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
@@ -14,7 +14,7 @@ const STEPS = [
     number: '02',
     title: 'Pilih Layanan & Unggah Dokumen',
     description: 'Pilih jenis surat yang dibutuhkan, lalu foto dan unggah KTP serta KK Anda.',
-    color: '#7c3aed',
+    color: '#1e5fb8',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
@@ -36,7 +36,7 @@ const STEPS = [
     number: '04',
     title: 'Surat Diterbitkan',
     description: 'Petugas meninjau hasil AI dan menyetujui permohonan. Surat resmi siap dicetak.',
-    color: '#10b981',
+    color: '#16a372',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -62,7 +62,7 @@ export default function HowItWorksSection() {
         <div className="text-center mb-14">
           <span
             className="inline-block px-3 py-1 rounded-full text-[13px] font-medium mb-4"
-            style={{ background: 'rgba(30,64,175,0.08)', color: '#1e40af' }}
+            style={{ background: 'rgba(30,95,184,0.08)', color: '#1e5fb8' }}
           >
             Proses Mudah & Cepat
           </span>

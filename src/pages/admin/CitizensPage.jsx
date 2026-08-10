@@ -6,7 +6,7 @@ import { formatDate } from '../../utils/formatDate'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const DEMO_CITIZENS = [
@@ -34,7 +34,7 @@ function SearchIcon() {
 
 function UsersIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
     </svg>
   )
@@ -124,7 +124,7 @@ export default function CitizensPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama, email, atau NIK..."
-            className="w-full h-10 pl-9 pr-4 bg-white border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+            className="w-full h-10 pl-9 pr-4 bg-white border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
             style={CARD_SHADOW}
           />
         </div>
@@ -158,9 +158,9 @@ export default function CitizensPage() {
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
-                      <svg className="animate-spin w-6 h-6 text-[#1e40af] mx-auto" viewBox="0 0 24 24" fill="none">
+                      <svg className="animate-spin w-6 h-6 text-[#1e5fb8] mx-auto" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                        <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
                       </svg>
                     </td>
                   </tr>
@@ -196,8 +196,8 @@ export default function CitizensPage() {
                           <span
                             className="inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium"
                             style={{
-                              background: count > 0 ? 'rgba(30,64,175,0.08)' : '#f3f4f6',
-                              color:      count > 0 ? '#1e40af' : '#9ca3af',
+                              background: count > 0 ? 'rgba(30,95,184,0.08)' : '#f3f4f6',
+                              color:      count > 0 ? '#1e5fb8' : '#9ca3af',
                             }}
                           >
                             {count}

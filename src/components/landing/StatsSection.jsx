@@ -37,19 +37,19 @@ const STATS = [
     label: 'Warga Terdaftar',
     value: '12.543',
     icon: <UsersIcon />,
-    iconColor: 'text-[#1e40af]',
+    iconColor: 'text-[#1e5fb8]',
   },
   {
     label: 'Permohonan Diproses',
     value: '8.921',
     icon: <DocumentCheckIcon />,
-    iconColor: 'text-[#10b981]',
+    iconColor: 'text-[#16a372]',
   },
   {
     label: 'Rata-rata Waktu Proses',
     value: '2,5 hari',
     icon: <ClockIcon />,
-    iconColor: 'text-[#1e40af]',
+    iconColor: 'text-[#1e5fb8]',
   },
   {
     label: 'Layanan Tersedia',

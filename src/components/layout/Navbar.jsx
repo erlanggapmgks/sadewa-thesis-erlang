@@ -66,7 +66,7 @@ function CloseIcon() {
 function NavLink({ link, isActive, onClick }) {
   const className = `text-sm no-underline transition-colors ${
     isActive
-      ? 'font-medium text-[#1e40af]'
+      ? 'font-medium text-[#1e5fb8]'
       : 'font-normal text-[rgba(26,26,26,0.6)] hover:text-[#1a1a1a]'
   }`
 
@@ -119,10 +119,7 @@ export default function Navbar() {
             to={user ? dashboardRoute : ROUTES.HOME}
             className="flex items-center gap-2 no-underline"
           >
-            <LogoIcon size={44} />
-            <span className="font-semibold text-base text-[#1a1a1a] tracking-[-0.31px]">
-              SADEWA
-            </span>
+            <LogoIcon size={60} />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
@@ -164,7 +161,7 @@ export default function Navbar() {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden text-[#1a1a1a] p-1"
+            className="md:hidden text-[#1a1a1a] w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? 'Tutup menu' : 'Buka menu'}
             aria-expanded={mobileOpen}

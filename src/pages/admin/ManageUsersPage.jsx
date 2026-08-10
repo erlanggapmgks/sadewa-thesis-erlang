@@ -6,12 +6,12 @@ import { formatDate } from '../../utils/formatDate'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const ROLE_CFG = {
-  citizen: { label: 'Warga',  bg: 'rgba(30,64,175,0.08)', color: '#1e40af' },
-  admin:   { label: 'Admin',  bg: 'rgba(16,185,129,0.1)', color: '#059669' },
+  citizen: { label: 'Warga',  bg: 'rgba(30,95,184,0.08)', color: '#1e5fb8' },
+  admin:   { label: 'Admin',  bg: 'rgba(22,163,114,0.1)', color: '#059669' },
 }
 
 const DEMO_USERS = [
@@ -73,7 +73,7 @@ function ConfirmDialog({ user: target, newRole, onConfirm, onCancel }) {
           <button
             onClick={onConfirm}
             className="flex-1 h-10 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity"
-            style={{ background: newRole === 'admin' ? '#10b981' : '#1e40af' }}
+            style={{ background: newRole === 'admin' ? '#16a372' : '#1e5fb8' }}
           >
             Ya, Ubah
           </button>
@@ -162,7 +162,7 @@ export default function ManageUsersPage() {
       {toasting && (
         <div
           className="fixed bottom-6 left-1/2 z-50 px-5 py-3 rounded-xl text-[14px] font-medium text-white"
-          style={{ transform: 'translateX(-50%)', background: '#10b981', boxShadow: '0 8px 24px rgba(16,185,129,0.35)' }}
+          style={{ transform: 'translateX(-50%)', background: '#16a372', boxShadow: '0 8px 24px rgba(22,163,114,0.35)' }}
         >
           {toasting}
         </div>
@@ -206,7 +206,7 @@ export default function ManageUsersPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama atau email..."
-                className="w-full h-10 pl-9 pr-4 bg-white border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+                className="w-full h-10 pl-9 pr-4 bg-white border border-[#e5e7eb] rounded-lg text-[14px] text-[#1a1a1a] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
                 style={CARD_SHADOW}
               />
             </div>
@@ -249,9 +249,9 @@ export default function ManageUsersPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center">
-                        <svg className="animate-spin w-6 h-6 text-[#1e40af] mx-auto" viewBox="0 0 24 24" fill="none">
+                        <svg className="animate-spin w-6 h-6 text-[#1e5fb8] mx-auto" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
                         </svg>
                       </td>
                     </tr>
@@ -303,7 +303,7 @@ export default function ManageUsersPage() {
                               <button
                                 onClick={() => requestRoleChange(u, 'admin')}
                                 className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0 hover:opacity-90 transition-opacity"
-                                style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}
+                                style={{ background: 'rgba(22,163,114,0.1)', color: '#059669' }}
                               >
                                 <ShieldIcon /> Jadikan Admin
                               </button>

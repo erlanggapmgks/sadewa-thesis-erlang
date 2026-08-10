@@ -24,7 +24,7 @@ function ArrowRightIcon() {
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(169.51deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ function NewsCard({ id, image, category, title, excerpt, date }) {
           </div>
           <Link
             to={`/berita/${id}`}
-            className="flex items-center gap-1 text-sm text-[#1e40af] no-underline hover:underline"
+            className="flex items-center gap-1 text-sm text-[#1e5fb8] no-underline hover:underline"
           >
             Baca Selengkapnya
             <ArrowRightIcon />
@@ -119,7 +119,7 @@ export default function BeritaPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari berita..."
-                className="w-full h-[42px] bg-white border border-[#e5e7eb] text-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.5)] tracking-[-0.31px] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent"
+                className="w-full h-[42px] bg-white border border-[#e5e7eb] text-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.5)] tracking-[-0.31px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
                 style={{ borderRadius: '8px', padding: '8px' }}
               />
             </div>

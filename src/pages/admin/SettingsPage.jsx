@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getVillageSetting, uploadSignature, setVillageSetting } from '../../services/settingsService'
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW   = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const VILLAGE_INFO = [
@@ -136,7 +136,7 @@ function TtdSection() {
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className="h-9 px-4 rounded-lg text-[13px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-60"
-          style={{ background: 'linear-gradient(90deg, #1e40af, #10b981)' }}
+          style={{ background: '#1e5fb8' }}
         >
           {uploading ? 'Mengupload...' : ttdUrl ? 'Ganti Tanda Tangan' : 'Upload Tanda Tangan'}
         </button>
@@ -151,7 +151,7 @@ function TtdSection() {
       </div>
 
       {status && (
-        <p className="mt-3 text-[13px]" style={{ color: status.ok ? '#10b981' : '#ef4444' }}>
+        <p className="mt-3 text-[13px]" style={{ color: status.ok ? '#16a372' : '#ef4444' }}>
           {status.msg}
         </p>
       )}
@@ -228,11 +228,11 @@ export default function SettingsPage() {
             {SYSTEM_INFO.map(r => <InfoRow key={r.label} {...r} />)}
             <div className="mt-4 pt-4 border-t border-[#f3f4f6]">
               <div className="flex items-start gap-2 p-3 rounded-lg"
-                style={{ background: 'rgba(30,64,175,0.05)', border: '1px solid rgba(30,64,175,0.1)' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" className="shrink-0 mt-0.5">
+                style={{ background: 'rgba(30,95,184,0.05)', border: '1px solid rgba(30,95,184,0.1)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="2" className="shrink-0 mt-0.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                 </svg>
-                <p className="text-[12px] text-[#1e40af] leading-5">
+                <p className="text-[12px] text-[#1e5fb8] leading-5">
                   Sistem ini dikembangkan sebagai proyek tesis. Konfigurasi lanjutan dapat diatur langsung melalui Supabase Dashboard.
                 </p>
               </div>

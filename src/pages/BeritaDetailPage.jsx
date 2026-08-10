@@ -40,7 +40,7 @@ function ShareIcon() {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const HERO_GRADIENT = 'linear-gradient(166.26deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ export default function BeritaDetailPage() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-[#6b7280] text-lg">Berita tidak ditemukan.</p>
-            <Link to={ROUTES.NEWS} className="mt-4 inline-block text-[#1e40af] hover:underline text-sm">
+            <Link to={ROUTES.NEWS} className="mt-4 inline-block text-[#1e5fb8] hover:underline text-sm">
               ← Kembali ke Berita
             </Link>
           </div>

@@ -5,7 +5,7 @@ import Footer from '../components/layout/Footer'
 
 function UsersIcon() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
     </svg>
   )
@@ -13,7 +13,7 @@ function UsersIcon() {
 
 function MapIcon() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.75" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
     </svg>
   )
@@ -21,7 +21,7 @@ function MapIcon() {
 
 function BuildingIcon() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
     </svg>
   )
@@ -29,7 +29,7 @@ function BuildingIcon() {
 
 function TrendUpIcon() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.75" aria-hidden="true">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.75" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
     </svg>
   )
@@ -72,7 +72,7 @@ const STRUKTUR = [
   { name: 'Isminingsih',               role: 'Kepala Dusun Ngrowo',    period: 'Menjabat' },
 ]
 
-const HERO_GRADIENT = 'linear-gradient(170.67deg, #1e40af 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -168,8 +168,8 @@ export default function VillageProfilePage() {
             <Card title="Batas Wilayah">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {BATAS_WILAYAH.map(({ arah, desa }) => (
-                  <div key={arah} className="rounded-lg p-4 text-center" style={{ background: 'rgba(30,64,175,0.04)', border: '1px solid rgba(30,64,175,0.1)' }}>
-                    <p className="text-[11px] font-semibold text-[#1e40af] uppercase tracking-widest mb-1">{arah}</p>
+                  <div key={arah} className="rounded-lg p-4 text-center" style={{ background: 'rgba(30,95,184,0.04)', border: '1px solid rgba(30,95,184,0.1)' }}>
+                    <p className="text-[11px] font-semibold text-[#1e5fb8] uppercase tracking-widest mb-1">{arah}</p>
                     <p className="text-[14px] text-[#1a1a1a] font-medium">{desa}</p>
                   </div>
                 ))}
@@ -191,7 +191,7 @@ export default function VillageProfilePage() {
               <ul className="flex flex-col gap-2 list-none p-0 m-0">
                 {MISI_ITEMS.map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-[#1e40af] text-base leading-6 shrink-0 mt-0">•</span>
+                    <span className="text-[#1e5fb8] text-base leading-6 shrink-0 mt-0">•</span>
                     <span className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">{item}</span>
                   </li>
                 ))}

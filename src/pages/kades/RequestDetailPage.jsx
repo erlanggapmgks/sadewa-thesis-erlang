@@ -7,15 +7,15 @@ import { getRequestById, updateKadesStatus } from '../../services/documentServic
 import { formatDate } from '../../utils/formatDate'
 import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #7c3aed 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
-  kades_review: { bg: 'rgba(124,58,237,0.1)',  text: '#7c3aed', label: 'Menunggu TTD Kades' },
-  signed:       { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Sudah Ditandatangani' },
+  kades_review: { bg: 'rgba(30,95,184,0.1)',  text: '#1e5fb8', label: 'Menunggu TTD Kades' },
+  signed:       { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Sudah Ditandatangani' },
   rejected:     { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak' },
   pending:      { bg: 'rgba(59,130,246,0.1)',  text: '#3b82f6', label: 'Menunggu Tinjauan' },
-  completed:    { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Selesai' },
+  completed:    { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Selesai' },
 }
 
 const DEMO_REQUEST = {
@@ -126,9 +126,9 @@ export default function KadesRequestDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <svg className="animate-spin w-7 h-7 text-[#7c3aed]" viewBox="0 0 24 24" fill="none">
+        <svg className="animate-spin w-7 h-7 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-          <path d="M12 2a10 10 0 0 1 10 10" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
         </svg>
       </div>
     )
@@ -169,8 +169,8 @@ export default function KadesRequestDetailPage() {
           <div
             className="mb-6 rounded-lg px-4 py-3 flex items-center gap-3 text-[14px] font-medium"
             style={{
-              background: action === 'signed' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-              color:      action === 'signed' ? '#10b981' : '#ef4444',
+              background: action === 'signed' ? 'rgba(22,163,114,0.1)' : 'rgba(239,68,68,0.1)',
+              color:      action === 'signed' ? '#16a372' : '#ef4444',
             }}
           >
             {action === 'signed' ? <CheckIcon size={18} /> : <XMarkIcon size={18} />}
@@ -231,7 +231,7 @@ export default function KadesRequestDetailPage() {
 
             {/* Catatan Kepala Desa */}
             <SectionCard
-              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>}
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>}
               title="Catatan Kepala Desa"
             >
               <textarea
@@ -240,7 +240,7 @@ export default function KadesRequestDetailPage() {
                 disabled={isDone}
                 placeholder="Tambahkan catatan (opsional)..."
                 rows={4}
-                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3 text-[14px] text-[#1a1a1a] leading-5 resize-none focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent disabled:opacity-60"
+                className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-4 py-3 text-[14px] text-[#1a1a1a] leading-5 resize-none focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent disabled:opacity-60"
               />
             </SectionCard>
           </div>
@@ -283,7 +283,7 @@ export default function KadesRequestDetailPage() {
                     onClick={() => handleAction('signed')}
                     disabled={submitting}
                     className="w-full h-11 rounded-lg flex items-center justify-center gap-2 text-[15px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 disabled:opacity-60"
-                    style={{ background: '#7c3aed' }}
+                    style={{ background: '#1e5fb8' }}
                   >
                     <PenIcon />
                     {submitting ? 'Menyimpan...' : 'Tanda Tangani & Setujui'}
@@ -304,7 +304,7 @@ export default function KadesRequestDetailPage() {
             {/* Info setelah TTD */}
             {currentStatus === 'signed' && (
               <div className="rounded-lg px-5 py-4 text-[13px]"
-                style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669' }}>
+                style={{ background: 'rgba(22,163,114,0.08)', border: '1px solid rgba(22,163,114,0.2)', color: '#059669' }}>
                 <p className="font-medium mb-1">Surat telah ditandatangani</p>
                 <p style={{ color: '#6b7280' }}>Admin akan memproses dan mengirimkan surat ke warga.</p>
               </div>

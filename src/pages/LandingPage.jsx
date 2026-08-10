@@ -12,7 +12,7 @@ function CtaSection() {
   return (
     <section
       className="py-20"
-      style={{ background: 'linear-gradient(135deg, #1e40af 0%, #10b981 100%)' }}
+      style={{ background: '#1e5fb8' }}
       aria-label="Call to action"
     >
       <div className="max-w-[1280px] mx-auto px-4 text-center">
@@ -24,7 +24,7 @@ function CtaSection() {
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Link to={ROUTES.REGISTER}>
-            <button className="h-12 px-8 rounded-xl bg-white text-[#1e40af] font-semibold text-[16px] hover:bg-blue-50 transition-colors cursor-pointer">
+            <button className="h-12 px-8 rounded-xl bg-white text-[#1e5fb8] font-semibold text-[16px] hover:bg-blue-50 transition-colors cursor-pointer">
               Daftar Sekarang
             </button>
           </Link>

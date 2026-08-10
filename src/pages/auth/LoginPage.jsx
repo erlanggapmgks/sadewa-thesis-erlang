@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   const inputBase =
-    'w-full h-10 bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent'
+    'w-full h-10 bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent'
 
   return (
     <div
@@ -134,7 +134,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-11 bg-[#1e40af] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] hover:bg-[#1e3a8a] transition-colors cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-[#1e5fb8] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] hover:bg-[#1e3a8a] transition-colors cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting ? 'Memproses...' : 'Masuk'}
           </button>
@@ -162,7 +162,7 @@ export default function LoginPage() {
         {/* Register link */}
         <p className="mt-5 text-center text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
           Belum punya akun?{' '}
-          <Link to={ROUTES.REGISTER} className="font-medium text-[#1e40af] no-underline hover:underline">
+          <Link to={ROUTES.REGISTER} className="font-medium text-[#1e5fb8] no-underline hover:underline">
             Daftar Sekarang
           </Link>
         </p>

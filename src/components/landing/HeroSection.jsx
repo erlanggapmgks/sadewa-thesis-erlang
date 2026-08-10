@@ -22,7 +22,7 @@ export default function HeroSection() {
     <section
       className="relative overflow-hidden"
       style={{
-        background: 'linear-gradient(159.82deg, #1e40af 0%, rgba(30,64,175,0.9) 50%, #10b981 100%)',
+        background: '#1e5fb8',
         minHeight: '492px',
       }}
       id="beranda"
@@ -31,7 +31,7 @@ export default function HeroSection() {
       {/* Subtle white overlay for depth */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 60%)' }}
+        style={{ background: 'rgba(255,255,255,0.05)' }}
         aria-hidden="true"
       />
 
@@ -65,7 +65,7 @@ export default function HeroSection() {
           {/* CTA buttons */}
           <div className="flex flex-wrap gap-4">
             <Link to={ROUTES.LOGIN}>
-              <button className="inline-flex items-center gap-2 bg-white text-[#1e40af] font-medium text-base px-6 rounded-lg h-11 hover:bg-blue-50 transition-colors cursor-pointer">
+              <button className="inline-flex items-center gap-2 bg-white text-[#1e5fb8] font-medium text-base px-6 rounded-lg h-11 hover:bg-blue-50 transition-colors cursor-pointer">
                 Mulai Sekarang
                 <ArrowRightIcon />
               </button>

@@ -5,7 +5,7 @@ import { supabase } from '../../services/supabase'
 import { getKadesRequests } from '../../services/documentService'
 import { useAuthContext } from '../../context/AuthContext'
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #7c3aed 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const DEMO_REQUESTS = [
@@ -46,12 +46,12 @@ export default function KadesDashboardPage() {
 
   return (
     <div>
-      <section style={{ background: HERO_GRADIENT }} className="py-8">
+      <section style={{ background: HERO_GRADIENT }} className="py-12">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
             Selamat datang, {user?.name ?? 'Kepala Desa'}
           </h1>
-          <p className="mt-2 text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          <p className="mt-2 text-[14px] sm:text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
             {waiting > 0
               ? `${waiting} surat menunggu tanda tangan Anda`
               : 'Tidak ada surat yang menunggu tanda tangan'}
@@ -60,9 +60,9 @@ export default function KadesDashboardPage() {
       </section>
 
       <div className="max-w-[1280px] mx-auto px-4 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-          <StatCard label="Menunggu TTD"        value={loading ? '—' : waiting}  color="#7c3aed" />
-          <StatCard label="Sudah Ditandatangani" value={loading ? '—' : signed}   color="#10b981" />
+        <div className="relative -mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard label="Menunggu TTD"        value={loading ? '—' : waiting}  color="#1e5fb8" />
+          <StatCard label="Sudah Ditandatangani" value={loading ? '—' : signed}   color="#16a372" />
           <StatCard label="Ditolak"              value={loading ? '—' : rejected} color="#ef4444" />
         </div>
 
@@ -74,7 +74,7 @@ export default function KadesDashboardPage() {
             </h2>
             <button
               onClick={() => navigate(ROUTES.KADES_REQUESTS)}
-              className="text-[13px] font-medium text-[#7c3aed] hover:underline cursor-pointer border-0 bg-transparent p-0"
+              className="text-[13px] font-medium text-[#1e5fb8] hover:underline cursor-pointer border-0 bg-transparent p-0"
             >
               Lihat semua
             </button>
@@ -82,9 +82,9 @@ export default function KadesDashboardPage() {
 
           {loading ? (
             <div className="py-12 flex justify-center">
-              <svg className="animate-spin w-6 h-6 text-[#7c3aed]" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </div>
           ) : recent.length === 0 ? (
@@ -104,7 +104,7 @@ export default function KadesDashboardPage() {
                   <button
                     onClick={() => navigate(ROUTES.KADES_REQUEST_DETAIL.replace(':id', req.id))}
                     className="h-8 px-4 rounded-lg text-[13px] font-medium text-white border-0 cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ background: '#7c3aed' }}
+                    style={{ background: '#1e5fb8' }}
                   >
                     Tinjau & TTD
                   </button>

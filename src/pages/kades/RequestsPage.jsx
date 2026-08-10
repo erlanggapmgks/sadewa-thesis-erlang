@@ -6,12 +6,12 @@ import { getKadesRequests } from '../../services/documentService'
 import { formatDate } from '../../utils/formatDate'
 import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
-const HERO_GRADIENT = 'linear-gradient(90deg, #7c3aed 0%, #10b981 100%)'
+const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
 const STATUS_MAP = {
-  kades_review: { bg: 'rgba(124,58,237,0.1)',  text: '#7c3aed', label: 'Menunggu TTD' },
-  signed:       { bg: 'rgba(16,185,129,0.1)',  text: '#10b981', label: 'Sudah Ditandatangani' },
+  kades_review: { bg: 'rgba(30,95,184,0.1)',  text: '#1e5fb8', label: 'Menunggu TTD' },
+  signed:       { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Sudah Ditandatangani' },
   rejected:     { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak' },
 }
 
@@ -104,13 +104,13 @@ export default function KadesRequestsPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama warga, ID permohonan, atau jenis layanan..."
-                className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-lg pl-[38px] pr-4 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
+                className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-lg pl-[38px] pr-4 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
               />
             </div>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="h-[42px] bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#7c3aed] cursor-pointer shrink-0"
+              className="h-[42px] bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] cursor-pointer shrink-0"
             >
               {FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -126,9 +126,9 @@ export default function KadesRequestsPage() {
 
           {loading ? (
             <div className="py-16 flex justify-center">
-              <svg className="animate-spin w-6 h-6 text-[#7c3aed]" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </div>
           ) : (
@@ -180,7 +180,7 @@ export default function KadesRequestsPage() {
                             type="button"
                             onClick={() => navigate(ROUTES.KADES_REQUEST_DETAIL.replace(':id', req.id))}
                             className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity border-0 cursor-pointer whitespace-nowrap"
-                            style={{ background: '#7c3aed' }}
+                            style={{ background: '#1e5fb8' }}
                           >
                             Tinjau <ArrowRightIcon />
                           </button>

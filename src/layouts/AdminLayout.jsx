@@ -1,16 +1,25 @@
+import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
 import { ROUTES } from '../routes/routes'
 import { useAuthContext } from '../context/AuthContext'
 
-const LOGO_GRADIENT = 'linear-gradient(135deg, #1e40af 0%, #10b981 100%)'
+const SADEWA_LOGO_SRC = '/sadewa-logo.png'
 
-function LogoIcon() {
+function LogoIcon({ size = 56 }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-      <path d="M2 20V8.5L12 3l10 5.5V20h-5v-6H7v6H2z" />
-      <path d="M9 20v-4h6v4" />
-    </svg>
+    <img
+      src={SADEWA_LOGO_SRC}
+      alt="Logo SADEWA"
+      width={size}
+      height={size}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        objectFit: 'contain',
+        display: 'block',
+      }}
+    />
   )
 }
 function BellIcon() {
@@ -77,6 +86,20 @@ function CogIcon() {
     </svg>
   )
 }
+function HamburgerIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.75" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+    </svg>
+  )
+}
+function CloseIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.75" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+    </svg>
+  )
+}
 
 const NAV_ITEMS = [
   { label: 'Dashboard',        Icon: DashboardIcon,  to: ROUTES.ADMIN_DASHBOARD },
@@ -91,9 +114,11 @@ export default function AdminLayout() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const { user, logout } = useAuthContext()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   function handleLogout() {
     logout()
+    setMenuOpen(false)
     navigate(ROUTES.LOGIN, { replace: true })
   }
 
@@ -105,36 +130,81 @@ export default function AdminLayout() {
         className="border-b border-[#e5e7eb] sticky top-0 z-30 shrink-0"
         style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)' }}
       >
-        <div className="h-16 flex items-center justify-between px-6">
+        <div className="h-16 flex items-center justify-between px-4 sm:px-6">
           <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2 no-underline">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: LOGO_GRADIENT }}>
-              <LogoIcon />
-            </div>
-            <span className="font-semibold text-[15px] text-[#1a1a1a] tracking-[-0.31px]">SADEWA</span>
-            <span className="ml-1 px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: 'rgba(30,64,175,0.1)', color: '#1e40af' }}>
+            <LogoIcon size={56} />
+            <span className="ml-1 px-2 py-0.5 rounded text-[11px] font-medium hidden sm:inline-block" style={{ background: 'rgba(30,95,184,0.1)', color: '#1e5fb8' }}>
               Admin
             </span>
           </Link>
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent" aria-label="Notifikasi">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent hidden sm:flex items-center justify-center shrink-0" aria-label="Notifikasi">
               <BellIcon />
-              <span className="absolute top-1.5 left-[22px] w-2 h-2 bg-red-500 rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
             </button>
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+            <div className="hidden sm:flex items-center gap-2 px-2 py-1.5 rounded-lg">
               <UserCircleIcon />
               <span className="font-medium text-[14px] text-[#1a1a1a] tracking-[-0.15px]">{user?.name ?? 'Profil'}</span>
             </div>
-            <button onClick={handleLogout} className="flex items-center gap-2 h-9 px-3 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent">
+            <button onClick={handleLogout} className="hidden sm:flex items-center gap-2 h-9 px-3 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent">
               <LogoutIcon />
               <span className="font-medium text-[14px] text-[#1a1a1a] tracking-[-0.15px]">Keluar</span>
             </button>
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              className="md:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center shrink-0"
+              aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile drawer */}
+        {menuOpen && (
+          <div className="md:hidden border-t border-[#e5e7eb] bg-white">
+            <div className="px-4 py-4 flex flex-col gap-3">
+              {/* Nav items */}
+              {NAV_ITEMS.map((item) => {
+                const active = location.pathname === item.to
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 h-11 px-3 rounded-lg text-[14px] font-medium transition-colors no-underline"
+                    style={{
+                      background: active ? 'rgba(30,95,184,0.08)' : 'transparent',
+                      color: active ? '#1e5fb8' : '#6b7280',
+                      minHeight: '44px',
+                    }}
+                  >
+                    <item.Icon />
+                    {item.label}
+                  </Link>
+                )
+              })}
+              {/* Divider */}
+              <div className="h-px bg-[#e5e7eb] my-1" />
+              {/* User info + logout */}
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+                <UserCircleIcon />
+                <span className="font-medium text-[14px] text-[#1a1a1a] tracking-[-0.15px]">{user?.name ?? 'Profil'}</span>
+              </div>
+              <button onClick={handleLogout} className="flex items-center gap-2 h-11 px-3 rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent w-fit min-h-[44px]">
+                <LogoutIcon />
+                <span className="font-medium text-[14px] text-[#1a1a1a] tracking-[-0.15px]">Keluar</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="flex flex-1 min-h-0">
 
-        {/* Sidebar */}
+        {/* Sidebar (desktop only) */}
         <aside className="w-56 shrink-0 border-r border-[#e5e7eb] hidden md:flex flex-col bg-white">
           <nav className="flex flex-col gap-1 p-3 flex-1 pt-4">
             {NAV_ITEMS.map((item) => {
@@ -143,10 +213,10 @@ export default function AdminLayout() {
                 <Link
                   key={item.label}
                   to={item.to}
-                  className="flex items-center gap-3 h-9 px-3 rounded-lg text-[14px] font-medium transition-colors no-underline"
+                  className="flex items-center gap-3 h-11 px-3 rounded-lg text-[14px] font-medium transition-colors no-underline min-h-[44px]"
                   style={{
-                    background: active ? 'rgba(30,64,175,0.08)' : 'transparent',
-                    color: active ? '#1e40af' : '#6b7280',
+                    background: active ? 'rgba(30,95,184,0.08)' : 'transparent',
+                    color: active ? '#1e5fb8' : '#6b7280',
                   }}
                 >
                   <item.Icon />

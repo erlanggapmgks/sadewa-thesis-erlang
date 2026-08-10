@@ -12,9 +12,9 @@ export default function NotFoundPage() {
       {/* Decorative circle */}
       <div
         className="w-32 h-32 rounded-full flex items-center justify-center mb-8"
-        style={{ background: 'linear-gradient(135deg, rgba(30,64,175,0.08) 0%, rgba(16,185,129,0.08) 100%)' }}
+        style={{ background: 'rgba(30,95,184,0.08)' }}
       >
-        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.25">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.25">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
         </svg>
       </div>
@@ -24,7 +24,7 @@ export default function NotFoundPage() {
         className="font-bold leading-none mb-4"
         style={{
           fontSize: 'clamp(80px, 15vw, 120px)',
-          background: 'linear-gradient(135deg, #1e40af, #10b981)',
+          background: '#1e5fb8',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
@@ -49,13 +49,13 @@ export default function NotFoundPage() {
         <Link to={ROUTES.HOME}>
           <button
             className="h-11 px-6 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(90deg, #1e40af, #10b981)' }}
+            style={{ background: '#1e5fb8' }}
           >
             Ke Beranda
           </button>
         </Link>
         <Link to={ROUTES.LOGIN}>
-          <button className="h-11 px-6 rounded-lg border border-[#e5e7eb] bg-white text-[14px] font-medium text-[#1e40af] hover:bg-[#eff6ff] transition-colors cursor-pointer">
+          <button className="h-11 px-6 rounded-lg border border-[#e5e7eb] bg-white text-[14px] font-medium text-[#1e5fb8] hover:bg-[#eff6ff] transition-colors cursor-pointer">
             Masuk
           </button>
         </Link>

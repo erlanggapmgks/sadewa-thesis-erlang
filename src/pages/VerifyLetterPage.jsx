@@ -26,7 +26,7 @@ function getLetterCode(serviceType) {
 
 function CheckCircleIcon() {
   return (
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.5">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   )
@@ -77,7 +77,7 @@ export default function VerifyLetterPage() {
         <div className="max-w-[640px] mx-auto px-4 h-14 flex items-center justify-between">
           <Link to={ROUTES.HOME} className="flex items-center gap-2 no-underline">
             <div className="w-7 h-7 rounded-md flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #1e40af 0%, #10b981 100%)' }}>
+              style={{ background: '#1e5fb8' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                 <path d="M2 20V8.5L12 3l10 5.5V20h-5v-6H7v6H2z" />
                 <path d="M9 20v-4h6v4" />
@@ -95,9 +95,9 @@ export default function VerifyLetterPage() {
 
           {loading ? (
             <div className="flex flex-col items-center gap-3">
-              <svg className="animate-spin w-8 h-8 text-[#1e40af]" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin w-8 h-8 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
               </svg>
               <p className="text-[14px] text-[#6b7280]">Memverifikasi surat...</p>
             </div>
@@ -107,7 +107,7 @@ export default function VerifyLetterPage() {
 
               {/* Status header */}
               <div className="px-6 py-8 flex flex-col items-center gap-3 text-center"
-                style={{ background: 'rgba(16,185,129,0.05)', borderBottom: '1px solid rgba(16,185,129,0.15)' }}>
+                style={{ background: 'rgba(22,163,114,0.05)', borderBottom: '1px solid rgba(22,163,114,0.15)' }}>
                 <CheckCircleIcon />
                 <div>
                   <h1 className="font-semibold text-[20px] text-[#1a1a1a] tracking-[-0.5px]">
@@ -130,8 +130,8 @@ export default function VerifyLetterPage() {
 
                 <div className="pt-4 border-t border-[#f3f4f6]">
                   <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                    style={{ background: 'rgba(16,185,129,0.08)' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                    style={{ background: 'rgba(22,163,114,0.08)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                     </svg>
                     <span className="text-[13px] text-[#059669] font-medium">

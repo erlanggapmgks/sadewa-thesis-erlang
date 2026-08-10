@@ -2,10 +2,10 @@ const FEATURES = [
   {
     title: 'OCR Dokumen Otomatis',
     description: 'Sistem membaca teks dari foto KTP dan KK menggunakan teknologi Optical Character Recognition, menghilangkan kebutuhan input manual.',
-    color: '#1e40af',
-    bg: 'rgba(30,64,175,0.06)',
+    color: '#1e5fb8',
+    bg: 'rgba(30,95,184,0.06)',
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.75">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
       </svg>
     ),
@@ -13,10 +13,10 @@ const FEATURES = [
   {
     title: 'Pemeriksaan Kualitas Dokumen',
     description: 'AI mendeteksi apakah foto dokumen cukup jelas, tidak buram, dan tidak terpotong sebelum permohonan diproses.',
-    color: '#7c3aed',
-    bg: 'rgba(124,58,237,0.06)',
+    color: '#1e5fb8',
+    bg: 'rgba(30,95,184,0.06)',
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.75">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
       </svg>
     ),
@@ -35,10 +35,10 @@ const FEATURES = [
   {
     title: 'Penerbitan Surat Digital',
     description: 'Setelah disetujui admin, surat keterangan resmi dihasilkan secara otomatis sesuai format dinas dan siap dicetak atau disimpan sebagai PDF.',
-    color: '#10b981',
-    bg: 'rgba(16,185,129,0.06)',
+    color: '#16a372',
+    bg: 'rgba(22,163,114,0.06)',
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="1.75">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a372" strokeWidth="1.75">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
       </svg>
     ),
@@ -54,7 +54,7 @@ export default function FeaturesSection() {
         <div className="text-center mb-14">
           <span
             className="inline-block px-3 py-1 rounded-full text-[13px] font-medium mb-4"
-            style={{ background: 'rgba(16,185,129,0.08)', color: '#059669' }}
+            style={{ background: 'rgba(22,163,114,0.08)', color: '#059669' }}
           >
             Teknologi AI Terintegrasi
           </span>

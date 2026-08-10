@@ -89,7 +89,7 @@ export default function RegisterPage() {
   }
 
   const inputBase =
-    'w-full h-10 bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent'
+    'w-full h-10 bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent'
 
   const inputError = 'border-red-400 focus:ring-red-400'
 
@@ -239,15 +239,15 @@ export default function RegisterPage() {
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => { setAgree(e.target.checked); setErrors((prev) => ({ ...prev, agree: '' })) }}
-                className="mt-0.5 w-3.5 h-3.5 accent-[#1e40af] cursor-pointer shrink-0"
+                className="mt-0.5 w-3.5 h-3.5 accent-[#1e5fb8] cursor-pointer shrink-0"
               />
               <span className="text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
                 Saya menyetujui{' '}
-                <span className="text-[#1e40af] font-medium cursor-pointer hover:underline">
+                <span className="text-[#1e5fb8] font-medium cursor-pointer hover:underline">
                   Syarat & Ketentuan
                 </span>{' '}
                 dan{' '}
-                <span className="text-[#1e40af] font-medium cursor-pointer hover:underline">
+                <span className="text-[#1e5fb8] font-medium cursor-pointer hover:underline">
                   Kebijakan Privasi
                 </span>{' '}
                 SADEWA
@@ -277,7 +277,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-11 bg-[#1e40af] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] hover:bg-[#1e3a8a] transition-colors cursor-pointer border-0 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-[#1e5fb8] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] hover:bg-[#1e3a8a] transition-colors cursor-pointer border-0 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting ? 'Mendaftarkan...' : 'Daftar Sekarang'}
           </button>
@@ -287,7 +287,7 @@ export default function RegisterPage() {
         {/* Login link */}
         <p className="mt-5 text-center text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
           Sudah punya akun?{' '}
-          <Link to={ROUTES.LOGIN} className="font-medium text-[#1e40af] no-underline hover:underline">
+          <Link to={ROUTES.LOGIN} className="font-medium text-[#1e5fb8] no-underline hover:underline">
             Masuk
           </Link>
         </p>
