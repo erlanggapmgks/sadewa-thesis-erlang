@@ -18,12 +18,22 @@ const ROLE_HOME = {
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
-function LogoIcon() {
+const SADEWA_LOGO_SRC = '/sadewa-logo.png'
+
+function LogoIcon({ size = 40 }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-      <path d="M2 20V8.5L12 3l10 5.5V20h-5v-6H7v6H2z" />
-      <path d="M9 20v-4h6v4" />
-    </svg>
+    <img
+      src={SADEWA_LOGO_SRC}
+      alt="Logo SADEWA"
+      width={size}
+      height={size}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        objectFit: 'contain',
+        display: 'block',
+      }}
+    />
   )
 }
 
@@ -109,12 +119,7 @@ export default function Navbar() {
             to={user ? dashboardRoute : ROUTES.HOME}
             className="flex items-center gap-2 no-underline"
           >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1e40af 0%, #10b981 100%)' }}
-            >
-              <LogoIcon />
-            </div>
+            <LogoIcon size={44} />
             <span className="font-semibold text-base text-[#1a1a1a] tracking-[-0.31px]">
               SADEWA
             </span>
