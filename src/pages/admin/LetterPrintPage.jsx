@@ -277,15 +277,20 @@ export default function LetterPrintPage() {
         >
           {/* ── KOP SURAT ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '6px' }}>
-            {/* Emblem */}
+            {/* Logo SADEWA — tanpa outline luar karena logo sudah punya border lingkaran di dalam gambar */}
             <div style={{
-              width: 76, height: 76, borderRadius: '50%',
-              border: '3px double #111',
+              width: 76, height: 76,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, fontSize: '28px', color: '#1e5fb8',
-              fontFamily: 'serif',
+              flexShrink: 0,
+              background: 'transparent',
             }}>
-              ⚜
+              <img
+                src="/sadewa-logo.png"
+                alt="Logo Desa Wates"
+                width={76}
+                height={76}
+                style={{ objectFit: 'contain', display: 'block' }}
+              />
             </div>
             <div style={{ textAlign: 'center', flex: 1 }}>
               <div style={{ fontSize: '10pt', letterSpacing: '0.5px' }}>

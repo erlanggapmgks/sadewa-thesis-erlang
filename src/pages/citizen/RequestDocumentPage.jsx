@@ -11,6 +11,48 @@ import { ocrDocument } from '../../services/geminiService'
 const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
+// ── Session state persistence (anti-reset saat switch tab / tab discard / reload) ──
+const SESSION_KEY = 'sadewa_request_doc_state_v1'
+const FILE_KEY    = 'sadewa_request_ktp_file_v1'   // stores base64 DataURL of KTP file
+
+function readPersistedState() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return (parsed && typeof parsed === 'object') ? parsed : null
+  } catch { return null }
+}
+function readPersistedKtp() {
+  try { return localStorage.getItem(FILE_KEY) || null } catch { return null }
+}
+const saved = readPersistedState()
+const savedKtpDataUrl = readPersistedKtp()
+
+// Helpers: convert File <-> base64 DataURL for persistence
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onerror = () => reject(r.error)
+    r.onload  = () => resolve(String(r.result || ''))
+    r.readAsDataURL(file)
+  })
+}
+function dataURLtoFile(dataUrl, filename = 'ktp.jpg') {
+  try {
+    const arr = dataUrl.split(',')
+    const mimeMatch = arr[0].match(/:(.*?);/)
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) u8arr[n] = bstr.charCodeAt(n)
+    return new File([u8arr], filename, { type: mime })
+  } catch {
+    return null
+  }
+}
+
 const SERVICES = [
   { id: 'domisili',  label: 'Surat Keterangan Domisili',      desc: 'Bukti tempat tinggal resmi',              duration: '2–3 hari' },
   { id: 'pengantar', label: 'Surat Pengantar',                 desc: 'Pengantar untuk keperluan umum',          duration: '1–2 hari' },
@@ -260,35 +302,82 @@ export default function RequestDocumentPage() {
   const navigate   = useNavigate()
   const { user }   = useAuthContext()
 
-  const [step, setStep] = useState(1)
+  // ── State declarations (restore from session storage to avoid tab-discard reset)
+  const [step, setStep] = useState(saved?.step ?? 1)
 
   // Step 1
-  const [selectedService, setSelectedService] = useState(null)
-  const [purpose, setPurpose]                 = useState('')
-  const [step1Errors, setStep1Errors]         = useState({})
-  const [additionalData, setAdditionalData]   = useState({})
-  const [additionalErrors, setAdditionalErrors] = useState({})
+  const [selectedService, setSelectedService] = useState(saved?.selectedService ?? null)
+  const [purpose, setPurpose]                 = useState(saved?.purpose ?? '')
+  const [step1Errors, setStep1Errors]         = useState(saved?.step1Errors ?? {})
+  const [additionalData, setAdditionalData]   = useState(saved?.additionalData ?? {})
+  const [additionalErrors, setAdditionalErrors] = useState(saved?.additionalErrors ?? {})
 
-  // Step 2
-  const [ktpFile, setKtpFile]       = useState(null)
-  const [kkFile, setKkFile]         = useState(null)
-  const [ktpPreview, setKtpPreview] = useState(null)
-  const [kkPreview, setKkPreview]   = useState(null)
-  const [step2Error, setStep2Error] = useState('')
+  // Step 2 — ONLY KTP is required. KK removed per product update (2026-08-26).
+  // Auto-restore file KTP dari base64 DataURL jika tersimpan di localStorage (tab discard recovery).
+  const [ktpFile, setKtpFile]       = useState(() => (savedKtpDataUrl ? dataURLtoFile(savedKtpDataUrl) : null))
+  const [ktpPreview, setKtpPreview] = useState(() => {
+    if (saved?.ktpPreview) return saved.ktpPreview
+    if (savedKtpDataUrl)   return savedKtpDataUrl
+    return null
+  })
+  const [step2Error, setStep2Error] = useState(saved?.step2Error ?? '')
 
   // Step 3 – AI
-  const [aiLoading, setAiLoading]   = useState(false)
-  const [aiResult, setAiResult]     = useState(null)
-  const [aiProgress, setAiProgress] = useState(0)
-  const [extracted, setExtracted]   = useState({
+  const [aiLoading, setAiLoading]   = useState(saved?.aiLoading ?? false)
+  const [aiResult, setAiResult]     = useState(saved?.aiResult ?? null)
+  const [aiProgress, setAiProgress] = useState(saved?.aiProgress ?? 0)
+  const [extracted, setExtracted]   = useState(saved?.extracted ?? {
     name: '', nik: '', birthPlace: '', birthDate: '', address: '',
   })
 
   // Step 4 – Submit
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted]   = useState(false)
-  const [requestId, setRequestId]   = useState(null)
-  const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(saved?.submitting ?? false)
+  const [submitted, setSubmitted]   = useState(saved?.submitted ?? false)
+  const [requestId, setRequestId]   = useState(saved?.requestId ?? null)
+  const [submitError, setSubmitError] = useState(saved?.submitError ?? '')
+
+  // ── Persist serializable state to sessionStorage + KTP file base64 to localStorage
+  // This prevents data loss when user switches tabs and Chrome Memory Saver discards
+  // the tab (causing a full React re-mount when user switches back).
+  useEffect(() => {
+    try {
+      const snapshot = {
+        step,
+        selectedService,
+        purpose,
+        step1Errors,
+        additionalData,
+        additionalErrors,
+        ktpPreview,
+        step2Error,
+        aiLoading,
+        aiResult,
+        aiProgress,
+        extracted,
+        submitting,
+        submitted,
+        requestId,
+        submitError,
+      }
+      if (submitted && requestId) {
+        sessionStorage.removeItem(SESSION_KEY)
+        localStorage.removeItem(FILE_KEY)
+      } else {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(snapshot))
+        // Persist actual KTP file bytes as base64 so we can reconstruct the File
+        // object after tab-discard remount (File objects themselves can't be serialized)
+        if (ktpFile) {
+          fileToDataURL(ktpFile).then(b64 => {
+            try { localStorage.setItem(FILE_KEY, b64) } catch { /* storage full, ignore */ }
+          }).catch(() => {})
+        }
+      }
+    } catch { /* storage full / disabled — silently ignore */ }
+  }, [
+    step, selectedService, purpose, step1Errors, additionalData, additionalErrors,
+    ktpFile, ktpPreview, step2Error, aiLoading, aiResult, aiProgress, extracted,
+    submitting, submitted, requestId, submitError,
+  ])
 
   // ── File handlers ──────────────────────────────────────────────────────────
 
@@ -296,12 +385,11 @@ export default function RequestDocumentPage() {
     setKtpFile(file)
     setKtpPreview(URL.createObjectURL(file))
     setStep2Error('')
-  }
-
-  function handleKkFile(file) {
-    setKkFile(file)
-    setKkPreview(URL.createObjectURL(file))
-    setStep2Error('')
+    // Immediately persist new KTP file base64 to localStorage so even if tab
+    // gets discarded before the useEffect autosave fires, we don't lose the file.
+    fileToDataURL(file).then(b64 => {
+      try { localStorage.setItem(FILE_KEY, b64) } catch {}
+    }).catch(() => {})
   }
 
   // ── Step navigation ────────────────────────────────────────────────────────
@@ -329,8 +417,8 @@ export default function RequestDocumentPage() {
   }
 
   async function goStep3() {
-    if (!ktpFile || !kkFile) {
-      setStep2Error('Unggah foto KTP dan KK terlebih dahulu.')
+    if (!ktpFile) {
+      setStep2Error('Unggah foto KTP terlebih dahulu.')
       return
     }
     setStep2Error('')
@@ -338,7 +426,6 @@ export default function RequestDocumentPage() {
     setAiLoading(true)
     setAiProgress(0)
 
-    // progress animation
     const timer = setInterval(() => setAiProgress(p => Math.min(p + 12, 90)), 300)
 
     const result = await runAIProcessing(ktpFile, user?.name)
@@ -357,7 +444,6 @@ export default function RequestDocumentPage() {
     setSubmitError('')
 
     if (!supabase) {
-      // Demo mode — simulate success and persist to sessionStorage
       await new Promise(r => setTimeout(r, 1000))
       const newId = 'DEMO-' + Date.now().toString().slice(-6)
       const existing = JSON.parse(sessionStorage.getItem('sadewa_demo_requests') ?? '[]')
@@ -370,30 +456,26 @@ export default function RequestDocumentPage() {
     }
 
     try {
-      // Upload files to Supabase Storage
-      const [ktpRes, kkRes] = await Promise.all([
-        documentService.uploadDocument(ktpFile, user.id, 'ktp.jpg'),
-        documentService.uploadDocument(kkFile, user.id, 'kk.jpg'),
-      ])
+      // Upload ONLY KTP. KK upload removed per product update (2026-08-26).
+      const ktpRes = await documentService.uploadDocument(ktpFile, user.id, 'ktp.jpg')
 
-      if (!ktpRes.ok || !kkRes.ok) {
-        setSubmitError('Gagal mengunggah dokumen. Coba lagi.')
+      if (!ktpRes.ok) {
+        setSubmitError('Gagal mengunggah dokumen KTP. Coba lagi.')
         setSubmitting(false)
         return
       }
 
-      // Save request to DB
       const hasAddData = Object.keys(additionalData).length > 0
       const reqRes = await documentService.createDocumentRequest({
         user_id: user.id,
         service_type: selectedService,
         status: 'pending',
         ktp_url: ktpRes.url,
-        kk_url: kkRes.url,
+        kk_url: null,    // KK no longer collected
         purpose,
         additional_data: hasAddData ? additionalData : null,
-        ai_reading_status: aiResult.quality.ktp === 'good' ? 'success' : 'warning',
-        document_quality_status: aiResult.quality.ktp,
+        ai_reading_status: aiResult?.quality?.ktp === 'good' ? 'success' : 'warning',
+        document_quality_status: aiResult?.quality?.ktp ?? 'good',
       })
 
       if (!reqRes.ok) {
@@ -402,7 +484,6 @@ export default function RequestDocumentPage() {
         return
       }
 
-      // Save extracted OCR data
       await documentService.saveExtractedDocument(reqRes.request.id, {
         full_name: extracted.name,
         nik: extracted.nik,
@@ -615,22 +696,16 @@ export default function RequestDocumentPage() {
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
                 <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Unggah Dokumen</h2>
                 <p className="mt-1 text-[14px] text-[#6b7280]">
-                  Foto KTP dan KK akan dibaca otomatis oleh sistem AI
+                  Foto KTP akan dibaca otomatis oleh sistem AI
                 </p>
               </div>
               <div className="p-6 flex flex-col gap-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="max-w-md mx-auto w-full">
                   <UploadZone
                     label="Foto KTP"
                     file={ktpFile}
                     preview={ktpPreview}
                     onFile={handleKtpFile}
-                  />
-                  <UploadZone
-                    label="Foto KK (Kartu Keluarga)"
-                    file={kkFile}
-                    preview={kkPreview}
-                    onFile={handleKkFile}
                   />
                 </div>
 
@@ -644,7 +719,7 @@ export default function RequestDocumentPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                   </svg>
                   <p className="text-[13px] text-[#1e5fb8] leading-5">
-                    Pastikan foto jelas, tidak buram, dan tidak terpotong. AI akan membaca data secara otomatis.
+                    Pastikan foto KTP jelas, tidak buram, dan tidak terpotong. AI akan membaca data secara otomatis.
                   </p>
                 </div>
 
@@ -731,12 +806,6 @@ export default function RequestDocumentPage() {
                       <img src={ktpPreview} className="w-28 h-16 object-cover rounded-lg border border-[#e5e7eb]" alt="KTP" />
                     </div>
                   )}
-                  {kkPreview && (
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[12px] text-[#6b7280] font-medium">KK</p>
-                      <img src={kkPreview} className="w-28 h-16 object-cover rounded-lg border border-[#e5e7eb]" alt="KK" />
-                    </div>
-                  )}
                 </div>
 
                 {submitError && <p className="text-[13px] text-red-500">{submitError}</p>}
@@ -775,8 +844,8 @@ export default function RequestDocumentPage() {
 const AI_STEPS = [
   'Membaca kualitas dokumen...',
   'Mengekstrak data KTP...',
-  'Mengekstrak data KK...',
   'Memeriksa kelengkapan data...',
+  'Menyelesaikan verifikasi AI...',
 ]
 
 function AIProcessingState({ progress }) {
@@ -859,10 +928,6 @@ function AIResultState({ result, extracted, setExtracted, inputBase, onBack, onC
           <div className="flex items-center gap-2">
             <span className="text-[13px] text-[#6b7280]">KTP:</span>
             <QualityBadge status={result.quality.ktp} />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] text-[#6b7280]">KK:</span>
-            <QualityBadge status={result.quality.kk} />
           </div>
         </div>
       </div>
