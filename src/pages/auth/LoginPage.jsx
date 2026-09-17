@@ -22,13 +22,6 @@ function EyeOffIcon() {
   )
 }
 
-// ── Demo accounts ────────────────────────────────────────────────────────────
-
-const DEMO_ACCOUNTS = [
-  { label: 'Warga (Demo)',  email: 'warga@demo.id', password: 'demo1234' },
-  { label: 'Admin (Demo)', email: 'admin@demo.id',  password: 'demo1234' },
-]
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
@@ -39,12 +32,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting]     = useState(false)
   const [error, setError]               = useState('')
-
-  function fillDemo(account) {
-    setEmail(account.email)
-    setPassword(account.password)
-    setError('')
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -139,25 +126,6 @@ export default function LoginPage() {
             {submitting ? 'Memproses...' : 'Masuk'}
           </button>
         </form>
-
-        {/* Demo accounts */}
-        <div className="mt-6 relative flex items-center">
-          <div className="flex-1 border-t border-[#e5e7eb]" />
-          <span className="mx-3 bg-white text-[12px] text-[#6b7280] leading-5 shrink-0">Akun Demo</span>
-          <div className="flex-1 border-t border-[#e5e7eb]" />
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {DEMO_ACCOUNTS.map((acc) => (
-            <button
-              key={acc.label}
-              type="button"
-              onClick={() => fillDemo(acc)}
-              className="h-9 bg-white border border-[#e5e7eb] rounded-lg text-[13px] font-medium text-[#1a1a1a] leading-5 hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              {acc.label}
-            </button>
-          ))}
-        </div>
 
         {/* Register link */}
         <p className="mt-5 text-center text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">

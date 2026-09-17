@@ -1,16 +1,55 @@
 import { createWorker } from 'tesseract.js'
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`
+const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${API_KEY}`
 
-// ── Tesseract OCR (primary engine — no API key needed) ────────────────────────
+// ── Tesseract OCR (fallback engine — offline, no API key needed) ─────────────
+
+const BULAN_ID = {
+  januari:1, februari:2, maret:3, april:4, mei:5, juni:6,
+  juli:7, agustus:8, september:9, oktober:10, november:11, desember:12,
+  jan:1, feb:2, mar:3, apr:4, jun:6, jul:7, agu:8, sep:9, okt:10, nov:11, des:12,
+}
 
 function dateToISO(str) {
   if (!str) return ''
-  const m = str.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/)
-  if (!m) return str
-  const [, d, mo, y] = m
-  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  // DD-MM-YYYY or DD/MM/YYYY (allow spaces around separator)
+  const numMatch = str.match(/(\d{1,2})\s*[-\/]\s*(\d{1,2})\s*[-\/]\s*(\d{4})/)
+  if (numMatch) {
+    const [, d, mo, y] = numMatch
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+  // DD MMMM YYYY or DD-MMMM-YYYY (Indonesian month names)
+  const nameMatch = str.match(/(\d{1,2})\s*[-\s]\s*([a-zA-Z]{3,})\s*[-\s]\s*(\d{4})/)
+  if (nameMatch) {
+    const mo = BULAN_ID[nameMatch[2].toLowerCase()]
+    if (mo) return `${nameMatch[3]}-${String(mo).padStart(2, '0')}-${nameMatch[1].padStart(2, '0')}`
+  }
+  return str
+}
+
+// Extract birth date encoded in the NIK (digits 7-12: DDMMYY, females: day+40)
+function dateFromNIK(nik) {
+  if (!nik || nik.length !== 16) return ''
+  let day = parseInt(nik.slice(6, 8), 10)
+  const month = nik.slice(8, 10)
+  const yr = parseInt(nik.slice(10, 12), 10)
+  if (day > 40) day -= 40
+  const year = yr + (yr <= 30 ? 2000 : 1900)
+  return `${year}-${month}-${String(day).padStart(2, '0')}`
+}
+
+// Pick the best birth date between an OCR-read date and a NIK-derived date.
+// KTP cards also print a signing/issuance date (e.g. "16-07-2021") — OCR can pick
+// that up instead of the birth date. Filter it out by checking the year: a valid
+// Indonesian birth year on a KTP must be ≥ 1920 and ≤ (current year − 15) because
+// the minimum age for a KTP is 17.
+function selectBestDate(ocrDate, nikDate) {
+  const maxBirthYear = new Date().getFullYear() - 15
+  const ocrYear = parseInt((ocrDate || '').split('-')[0], 10)
+  const ocrIsPlausible = ocrYear >= 1920 && ocrYear <= maxBirthYear
+  if (ocrDate && ocrIsPlausible) return ocrDate
+  return nikDate || ocrDate
 }
 
 function parseKTPText(raw) {
@@ -29,7 +68,7 @@ function parseKTPText(raw) {
   // to know when to stop collecting continuation lines).
   // NOTE: RT/RW, Kel/Desa, Kecamatan are intentionally NOT here — they are part
   // of the address block and handled separately by the address assembler below.
-  const KTP_LABEL = /^(NIK|Nama|Tempat|Tgl\.?|Lahir|Jenis|Gol\.|Alamat|Agama|Status|Pekerjaan|Kewarganegaraan|Berlaku|PROVINSI|KOTA|KABUPATEN)/i
+  const KTP_LABEL = /^(NIK|Nama|Tempat|Tgl\.?|Lahir|Jenis|Gol\.|Alam[a-z]{0,3}t?|Agama|Status|Pekerjaan|Kewarganegaraan|Berlaku|PROVINSI|KOTA|KABUPATEN)/i
 
   function extractMultilineValue(labelPattern) {
     const idx = findLabelIndex(labelPattern)
@@ -50,10 +89,22 @@ function parseKTPText(raw) {
     return value
   }
 
-  // NIK: 16 consecutive digits anywhere in the full text
+  // NIK: 16 consecutive digits anywhere in the full text.
+  // Fallback: grayscale preprocessing can cause Tesseract to insert spaces between
+  // digit groups, so also search the NIK label line with all non-digits stripped.
   const fullText = lines.join(' ')
-  const nikMatch = fullText.match(/\b(\d{16})\b/)
-  const nik = nikMatch ? nikMatch[1] : ''
+  let nik = (fullText.match(/\b(\d{16})\b/) || [])[1] || ''
+  if (!nik) {
+    // Tesseract sometimes splits label and value onto separate lines, or inserts
+    // spaces between digit groups. Grab the NIK line + the next line, strip all
+    // non-digits, and take the first 16 digits found.
+    const nikIdx = lines.findIndex(l => /^NIK\b/i.test(l))
+    if (nikIdx >= 0) {
+      const nikContext = lines.slice(nikIdx, nikIdx + 2).join(' ')
+      const digits = nikContext.replace(/\D/g, '')
+      if (digits.length >= 16) nik = digits.slice(0, 16)
+    }
+  }
 
   // Nama: trim trailing OCR noise (e.g. "BAGAS PRATAMA 9" → "BAGAS PRATAMA")
   const namaRaw = extractMultilineValue(/^Nama\s*:/i)
@@ -63,13 +114,29 @@ function parseKTPText(raw) {
     .replace(/[^a-zA-Z\s'.,-]/g, '')         // keep only name-safe characters
     .trim()
 
-  // Tempat/Tgl Lahir: "MALANG, 12-01-1999 oe" → split on date pattern
-  const ttlRaw = extractMultilineValue(/(?:Tempat.*Lahir|Tgl.*Lahir|Lahir)\s*:/i)
-  const dateMatch = ttlRaw.match(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})/)
-  const tanggalLahir = dateMatch ? dateToISO(dateMatch[1]) : ''
-  const tempatLahir = dateMatch
-    ? ttlRaw.slice(0, ttlRaw.indexOf(dateMatch[1])).replace(/[,\s]+$/, '').trim()
-    : ttlRaw.trim()
+  // Tempat/Tgl Lahir — colon is optional (real KTP OCR sometimes drops it)
+  const ttlRaw = extractMultilineValue(/(?:Tempat\s*[\/]?\s*Tgl\.?\s*Lahir|Tempat.*Lahir|Tgl\.?\s*Lahir|Lahir)\s*:?/i)
+
+  // Try numeric date (allow spaces around separators: "10 - 07 - 2004")
+  const numDateMatch = ttlRaw.match(/(\d{1,2}\s*[-\/]\s*\d{1,2}\s*[-\/]\s*\d{4})/)
+  // Try Indonesian month-name date ("10 JULI 2004", "4 Agustus 1995")
+  const bulanPattern = Object.keys(BULAN_ID).join('|')
+  const nameMonthMatch = ttlRaw.match(new RegExp(`(\\d{1,2}\\s+(?:${bulanPattern})\\s+\\d{4})`, 'i'))
+
+  const dateStr = numDateMatch?.[1] || nameMonthMatch?.[1] || ''
+
+  const tanggalLahirOCR = dateStr ? dateToISO(dateStr) : ''
+  const tanggalLahirNIK = nik ? dateFromNIK(nik) : ''
+  // Prefer the OCR date when its year is a plausible birth year (filters out the
+  // card-signing date that sometimes appears at the bottom of real KTPs).
+  // Fall back to NIK-derived date when OCR date is absent or out of range.
+  const tanggalLahir = selectBestDate(tanggalLahirOCR, tanggalLahirNIK)
+
+  // tempatLahir can only be split from ttlRaw when the date delimiter is present.
+  // Without it we have no safe split point, so return '' to avoid showing OCR garbage.
+  const tempatLahir = dateStr
+    ? ttlRaw.slice(0, ttlRaw.search(new RegExp(dateStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).replace(/[,\s]+$/, '').trim()
+    : ''
 
   // ── Alamat: KTP splits the address across several dedicated label rows ──────
   // Layout on a real/dummy KTP:
@@ -82,8 +149,13 @@ function parseKTPText(raw) {
   // We gather every address-related segment and stitch them together.
 
   function extractAfterColon(line) {
-    const idx = line.indexOf(':')
-    return idx >= 0 ? line.slice(idx + 1).trim() : line.trim()
+    const colonIdx = line.indexOf(':')
+    if (colonIdx >= 0) return line.slice(colonIdx + 1).trim()
+    // Real KTP OCR often reads ':' as '-'. If the line starts with a label word
+    // followed by a dash, treat the dash as the separator.
+    const dashMatch = line.match(/^[A-Za-z\/\s.]+?\s*[-–]\s*(.+)$/)
+    if (dashMatch) return dashMatch[1].trim()
+    return line.trim()
   }
 
   // Clean a single address segment:
@@ -223,7 +295,13 @@ function parseKTPText(raw) {
   }
 
   // 1. Street line — first line of the Alamat field
-  const alamatIdx = lines.findIndex(l => /^Alamat\s*:/i.test(l))
+  // Use fuzzy matching: real KTP OCR often reads 'm' as 'rn' → "Alarnat"
+  const alamatFuzzy = findLineByFuzzyLabel([
+    { prefix: 'Alamat', variants: ['alamat', 'alarnat', 'alainat', 'alamet', 'alam'] },
+  ])
+  const alamatIdx = alamatFuzzy
+    ? alamatFuzzy.index
+    : lines.findIndex(l => /^Alam[a-z]{0,3}t?\s*:/i.test(l))
   const addressParts = []
 
   if (alamatIdx >= 0) {
@@ -338,13 +416,58 @@ function parseKTPText(raw) {
   const found = [nik, nama, alamat].filter(Boolean).length
   const quality = found >= 2 ? 'good' : found === 1 ? 'blurry' : 'bad'
 
-  console.log(`[SADEWA OCR] Tesseract parsed → quality:${quality} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamat}`)
+  console.log(`[SADEWA OCR] KTP parsed → quality:${quality} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamat}`)
   return { quality, nama, nik, tempatLahir, tanggalLahir, alamat }
+}
+
+// Preprocess image: grayscale + contrast boost so Tesseract reads real KTPs better.
+// Real KTPs have coloured backgrounds, holograms, and security patterns that confuse
+// Tesseract when the image is sent as-is. Converting to high-contrast greyscale removes
+// most of that interference without affecting dummy KTPs.
+async function preprocessForOCR(file) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      // Only upscale truly small images (< 800 px). Large phone photos are already
+      // high-res; scaling them up further introduces interpolation blur on digit edges.
+      const scale = img.width < 800 ? Math.min(2, 1600 / img.width) : 1
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+
+      const id = ctx.getImageData(0, 0, w, h)
+      const px = id.data
+      for (let i = 0; i < px.length; i += 4) {
+        // Convert to grayscale, then apply a hard threshold to separate dark text
+        // from the guilloché pattern (≈ 80-140 gray) and blue background (≈ 140+).
+        // Text ink on a real KTP is ≈ 0-60 — hard threshold at 80 keeps text black
+        // and pushes guilloché + background to white. This differs from the earlier
+        // failed contrast-multiplier approach which darkened mid-tones into the text
+        // range. Here we lighten them to white instead.
+        const v = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
+        px[i] = px[i + 1] = px[i + 2] = v < 80 ? v : 255
+      }
+      ctx.putImageData(id, 0, 0)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(
+        blob => resolve(new File([blob], 'ktp_proc.png', { type: 'image/png' })),
+        'image/png'
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
 }
 
 async function ocrWithTesseract(file) {
   console.log('[SADEWA OCR] Starting Tesseract...')
-  const url = URL.createObjectURL(file)
+  const processed = await preprocessForOCR(file)
+  const url = URL.createObjectURL(processed)
   try {
     const worker = await createWorker('ind+eng', 1, {
       logger: m => { if (m.status === 'recognizing text') console.log('[SADEWA OCR] Progress:', Math.round(m.progress * 100) + '%') },
@@ -364,31 +487,39 @@ async function ocrWithTesseract(file) {
   }
 }
 
-// ── Gemini OCR (secondary — requires working API key) ─────────────────────────
+// ── Gemini OCR (primary engine — requires internet + API key) ────────────────
 
-const OCR_PROMPT = `Kamu adalah sistem OCR khusus untuk membaca KTP (Kartu Tanda Penduduk) Indonesia, termasuk KTP asli maupun KTP dummy/template untuk keperluan pengujian sistem.
+// JSON extraction approach: Gemini is told exactly which field to find for each key.
+// More robust than transcription for real KTPs — Gemini doesn't need to read all text
+// sequentially (guilloché can interrupt line-by-line reading), it jumps directly to
+// each labeled field on the card.
+const OCR_PROMPT = `Kamu adalah mesin OCR untuk KTP (Kartu Tanda Penduduk) Indonesia.
 
-Tugas kamu: baca gambar KTP dan ekstrak datanya, lalu kembalikan HANYA JSON berikut tanpa penjelasan apapun:
+Lihat gambar KTP dan ekstrak data berikut. Kembalikan HANYA JSON di bawah ini, tanpa penjelasan, tanpa markdown:
 {
   "quality": "good",
-  "nama": "nama lengkap sesuai KTP",
-  "nik": "16 digit NIK tanpa spasi atau tanda baca",
-  "tempat_lahir": "kota/kabupaten tempat lahir",
-  "tanggal_lahir": "format DD-MM-YYYY",
-  "alamat": "alamat lengkap termasuk RT/RW, Kel/Desa, Kecamatan, Kab/Kota"
+  "nama": "teks tepat setelah label Nama :",
+  "nik": "16 angka tepat setelah label NIK : (hapus semua spasi)",
+  "tempat_lahir": "nama kota sebelum koma pada baris Tempat/Tgl Lahir",
+  "tanggal_lahir": "tanggal lahir format DD-MM-YYYY dari baris yang sama",
+  "alamat": "RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
 }
 
-Aturan nilai "quality":
-- "good"   → gambar jelas, semua field bisa dibaca (termasuk KTP dummy/template)
-- "blurry" → gambar buram, gelap, atau terpotong sehingga sebagian field tidak terbaca
-- "bad"    → bukan dokumen KTP sama sekali atau tidak bisa dibaca
+Aturan quality: "good" = semua field terbaca, "blurry" = sebagian terbaca, "bad" = bukan KTP.
 
-Catatan penting:
-- KTP dummy/template untuk pengujian tetap dianggap valid, baca datanya apa adanya
-- NIK harus berisi tepat 16 angka, buang semua spasi dan tanda baca
-- Jika tanggal lahir tidak dalam format DD-MM-YYYY, konversikan
-- Jika field tidak terbaca sama sekali, isi dengan string kosong ""
-- Kembalikan HANYA JSON murni, tanpa markdown, tanpa blok kode, tanpa komentar`
+Panduan penting:
+- Kartu memiliki pola guilloche (tulisan "KARTU TANDA PENDUDUK" berulang diagonal) — ABAIKAN, fokus pada teks label dan nilainya
+- Pojok kanan bawah ada tanggal penerbitan dan tanda tangan — ABAIKAN, bukan tanggal lahir
+- NIK tepat 16 digit — baca satu per satu dengan teliti
+- Baris Tempat/Tgl Lahir berisi KOTA lalu TANGGAL dipisah koma: pisahkan ke dua field yang berbeda
+- Field alamat: susun PERSIS dengan format "RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
+  → RT dan RW: ambil angka dari baris RT/RW, tulis "RT 002 RW 002" (3 digit, pisah spasi)
+  → Kel/Desa: nama dari baris Kel/Desa
+  → Kecamatan: nama dari baris Kecamatan
+  → Kabupaten/Kota: dari header atas kartu (baris KABUPATEN ... atau KOTA ...)
+  → Contoh hasil: "RT 002 RW 002, WATES, TANJUNGANOM, NGANJUK"
+  → JANGAN sertakan teks dari baris Alamat (nama jalan/no rumah) — cukup RT/RW + Kel/Desa + Kecamatan + Kabupaten
+- Jika field tidak terbaca, isi string kosong ""`
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -411,13 +542,31 @@ function parseOcrJson(text) {
 
 function tanggalToISO(ddmmyyyy) {
   if (!ddmmyyyy) return ''
-  const [d, m, y] = ddmmyyyy.split('-')
-  if (!d || !m || !y) return ddmmyyyy
-  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ddmmyyyy)) return ddmmyyyy
+  const m = ddmmyyyy.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/)
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  return ddmmyyyy
+}
+
+// Normalize RT/RW fragment in an alamat string to "RT 002 RW 002" format.
+// Handles variations: "002/002", "002 / 002", "RT002/RW002", "RT 002/RW 002"
+function normalizeRtRw(alamat) {
+  if (!alamat) return ''
+  return alamat.replace(
+    /\bRT\s*(\d{1,3})\s*[\/-]?\s*RW\s*(\d{1,3})\b|\b(\d{1,3})\s*\/\s*(\d{1,3})\b/gi,
+    (_, rt1, rw1, rt2, rw2) => {
+      const rt = (rt1 ?? rt2 ?? '0').padStart(3, '0')
+      const rw = (rw1 ?? rw2 ?? '0').padStart(3, '0')
+      return `RT ${rt} RW ${rw}`
+    }
+  )
 }
 
 async function ocrWithGemini(file) {
   try {
+    // Send the ORIGINAL image — Gemini is a colour vision model that reads colour
+    // images natively. Greyscale preprocessing would remove the contrast cues that
+    // help the model distinguish dark text from the blue KTP background.
     const base64 = await fileToBase64(file)
     const mimeType = file.type || 'image/jpeg'
 
@@ -426,7 +575,28 @@ async function ocrWithGemini(file) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: OCR_PROMPT }, { inline_data: { mime_type: mimeType, data: base64 } }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 },
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 1024,
+          // Force valid JSON output — prevents gemini-3.6-flash from returning
+          // conversational text ("...Matches") instead of the requested JSON structure.
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              quality:       { type: 'STRING' },
+              nama:          { type: 'STRING' },
+              nik:           { type: 'STRING' },
+              tempat_lahir:  { type: 'STRING' },
+              tanggal_lahir: { type: 'STRING' },
+              alamat:        { type: 'STRING' },
+            },
+            required: ['quality', 'nama', 'nik', 'tempat_lahir', 'tanggal_lahir', 'alamat'],
+          },
+          // Disable thinking mode — thinking tokens consume the output budget and
+          // can cause JSON responses to be truncated mid-value on gemini-3.6-flash.
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     })
 
@@ -437,17 +607,49 @@ async function ocrWithGemini(file) {
     }
 
     const data = await res.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-    const parsed = parseOcrJson(text)
-    if (!parsed) return null
+    const finishReason = data.candidates?.[0]?.finishReason
+    // Join all parts — newer Gemini models may split response across multiple parts
+    const parts = data.candidates?.[0]?.content?.parts ?? []
+    const text = parts.map(p => p.text ?? '').join('')
 
+    console.log('[SADEWA OCR] Gemini finishReason:', finishReason, '| parts:', parts.length, '| tokens used:', data.usageMetadata?.totalTokenCount)
+
+    if (!text) {
+      console.warn('[SADEWA OCR] Gemini empty response')
+      return null
+    }
+
+    console.log('[SADEWA OCR] Gemini raw response:', text)
+    const parsed = parseOcrJson(text)
+    if (!parsed) {
+      console.warn('[SADEWA OCR] Gemini JSON parse failed — raw text was above ^')
+      return null
+    }
+
+    console.log('[SADEWA OCR] Gemini JSON result:', parsed)
+
+    const cleanNIK = (parsed.nik ?? '').replace(/\D/g, '')
+
+    // Split combined TTL field if Gemini puts both city and date into tanggal_lahir
+    let rawTempat = (parsed.tempat_lahir ?? '').trim()
+    let rawTanggal = (parsed.tanggal_lahir ?? '').trim()
+    if (!rawTempat && rawTanggal && !/^\d/.test(rawTanggal)) {
+      const commaIdx = rawTanggal.indexOf(',')
+      if (commaIdx > 0) {
+        rawTempat  = rawTanggal.slice(0, commaIdx).trim()
+        rawTanggal = rawTanggal.slice(commaIdx + 1).trim()
+      }
+    }
+
+    const ocrDate = tanggalToISO(rawTanggal)
+    const nikDate = cleanNIK.length === 16 ? dateFromNIK(cleanNIK) : ''
     return {
-      quality: parsed.quality ?? 'good',
-      nama: parsed.nama ?? '',
-      nik: (parsed.nik ?? '').replace(/\D/g, ''),
-      tempatLahir: parsed.tempat_lahir ?? '',
-      tanggalLahir: tanggalToISO(parsed.tanggal_lahir),
-      alamat: parsed.alamat ?? '',
+      quality:      parsed.quality ?? 'good',
+      nama:         (parsed.nama ?? '').trim(),
+      nik:          cleanNIK,
+      tempatLahir:  rawTempat,
+      tanggalLahir: selectBestDate(ocrDate, nikDate),
+      alamat:       normalizeRtRw((parsed.alamat ?? '').trim()),
     }
   } catch {
     return null
@@ -455,16 +657,28 @@ async function ocrWithGemini(file) {
 }
 
 // ── Public OCR entry point ────────────────────────────────────────────────────
-// Strategy: Gemini first (if key is valid) → Tesseract.js → null (mock fallback)
+// Strategy: Gemini Flash (primary, requires internet) → Tesseract.js (offline fallback) → null
 
 export async function ocrDocument(file) {
-  // 1. Try Gemini when API key looks configured
+  // 1. Gemini Flash — primary engine, requires internet + API key.
+  //    Accept the result as long as quality is not 'bad'. Do NOT gate on nama being
+  //    present: real KTPs with hologram/guilloche can cause Gemini to miss the name
+  //    while still reading NIK, date, and address correctly. Falling back to Tesseract
+  //    in that case makes everything worse — guilloché fools Tesseract far more than Gemini.
   if (API_KEY && API_KEY !== 'your-gemini-api-key-here') {
     const geminiResult = await ocrWithGemini(file)
-    if (geminiResult) return geminiResult
+    if (geminiResult && geminiResult.quality !== 'bad') {
+      console.log('[SADEWA OCR] Using Gemini result — quality:', geminiResult.quality)
+      return geminiResult
+    }
+    if (geminiResult?.quality === 'bad') {
+      console.log('[SADEWA OCR] Gemini returned bad quality, falling back to Tesseract')
+    } else {
+      console.log('[SADEWA OCR] Gemini unavailable, falling back to Tesseract')
+    }
   }
 
-  // 2. Tesseract.js — works offline, no API key needed
+  // 2. Tesseract.js — offline fallback, no internet needed.
   return ocrWithTesseract(file)
 }
 

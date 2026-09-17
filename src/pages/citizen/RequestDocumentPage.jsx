@@ -89,28 +89,11 @@ const ADDITIONAL_FIELDS = {
 
 const STEPS = ['Pilih Layanan', 'Unggah Dokumen', 'Verifikasi AI', 'Konfirmasi']
 
-// ── AI processing — real Gemini OCR with mock fallback ───────────────────────
-
-const MOCK_EXTRACTED = {
-  name: '',
-  nik: '3401012345678901',
-  address: 'Jl. Raya Wates No. 5 RT 003/RW 002, Desa Wates, Kec. Tanjunganom, Kab. Nganjuk',
-  birthPlace: 'Nganjuk',
-  birthDate: '1992-08-17',
-}
+// ── AI processing — Gemini Flash (primary) → Tesseract (fallback offline) ────
 
 async function runAIProcessing(ktpFile, userName) {
   const ocr = await ocrDocument(ktpFile)
-
-  if (!ocr) {
-    // No API key or OCR failed — use mock after simulated delay
-    await new Promise(r => setTimeout(r, 2800))
-    return {
-      quality: { ktp: 'good', kk: 'good' },
-      completeness: { name: true, nik: true, address: true, birthDate: true },
-      extracted: { ...MOCK_EXTRACTED, name: userName || '' },
-    }
-  }
+  if (!ocr) return null
 
   const ktpQuality = ocr.quality === 'bad' ? 'bad' : ocr.quality === 'blurry' ? 'blurry' : 'good'
   return {
@@ -122,9 +105,9 @@ async function runAIProcessing(ktpFile, userName) {
       birthDate: !!ocr.tanggalLahir,
     },
     extracted: {
-      name:       ocr.nama       || userName || '',
-      nik:        ocr.nik        || '',
-      address:    ocr.alamat     || '',
+      name:       ocr.nama        || userName || '',
+      nik:        ocr.nik         || '',
+      address:    ocr.alamat      || '',
       birthPlace: ocr.tempatLahir || '',
       birthDate:  ocr.tanggalLahir || '',
     },
@@ -433,6 +416,13 @@ export default function RequestDocumentPage() {
     clearInterval(timer)
     setAiProgress(100)
     await new Promise(r => setTimeout(r, 400))
+
+    if (!result) {
+      setAiLoading(false)
+      setStep(2)
+      setStep2Error('Ekstraksi data KTP gagal. Pastikan foto KTP jelas dan coba unggah ulang.')
+      return
+    }
 
     setAiResult(result)
     setExtracted(result.extracted)
