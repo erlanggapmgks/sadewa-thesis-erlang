@@ -31,6 +31,7 @@ import KadesRequestDetail from '../pages/kades/RequestDetailPage'
 import AdminDashboard from '../pages/admin/DashboardPage'
 import AdminRequests from '../pages/admin/ManageRequestsPage'
 import AdminRequestDetail from '../pages/admin/RequestDetailPage'
+import AdminWalkIn from '../pages/admin/WalkInRequestPage'
 import AdminCitizens from '../pages/admin/CitizensPage'
 import AdminUsers from '../pages/admin/ManageUsersPage'
 import AdminSettings from '../pages/admin/SettingsPage'
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboard /> },
       { path: ROUTES.ADMIN_REQUESTS, element: <AdminRequests /> },
       { path: ROUTES.ADMIN_REQUEST_DETAIL, element: <AdminRequestDetail /> },
+      { path: ROUTES.ADMIN_WALK_IN, element: <AdminWalkIn /> },
       { path: ROUTES.ADMIN_CITIZENS, element: <AdminCitizens /> },
       { path: ROUTES.ADMIN_USERS, element: <AdminUsers /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettings /> },

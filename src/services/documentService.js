@@ -42,6 +42,17 @@ export async function getMyRequests(userId) {
   return data
 }
 
+export async function findCitizenByNik(nik) {
+  if (!nik) return null
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, nik')
+    .eq('nik', nik)
+    .single()
+  if (error) return null
+  return data
+}
+
 export async function getRequestById(requestId) {
   const { data, error } = await supabase
     .from('service_requests')

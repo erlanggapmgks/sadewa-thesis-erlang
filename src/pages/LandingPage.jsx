@@ -16,10 +16,10 @@ function CtaSection() {
       aria-label="Call to action"
     >
       <div className="max-w-[1280px] mx-auto px-4 text-center">
-        <h2 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px] mb-4">
+        <h2 className="font-medium text-white leading-tight tracking-[0.37px] mb-4" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
           Siap Mengajukan Permohonan?
         </h2>
-        <p className="text-[18px] leading-7 max-w-[480px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.9)' }}>
+        <p className="text-[15px] sm:text-[18px] leading-7 max-w-[480px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.9)' }}>
           Daftar sekarang dan nikmati kemudahan layanan administrasi Desa Wates secara online
         </p>
         <div className="flex flex-wrap gap-4 justify-center">

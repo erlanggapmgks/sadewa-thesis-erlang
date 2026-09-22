@@ -86,8 +86,8 @@ export default function ReportingPage() {
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Laporan & Statistik</h1>
-            <p className="mt-2 text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Laporan & Statistik</h1>
+            <p className="mt-2 text-[14px] sm:text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
               Ringkasan aktivitas permohonan layanan administrasi Desa Wates
             </p>
           </div>

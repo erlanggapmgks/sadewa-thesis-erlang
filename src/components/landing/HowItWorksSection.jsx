@@ -13,7 +13,7 @@ const STEPS = [
   {
     number: '02',
     title: 'Pilih Layanan & Unggah Dokumen',
-    description: 'Pilih jenis surat yang dibutuhkan, lalu foto dan unggah KTP serta KK Anda.',
+    description: 'Pilih jenis surat yang dibutuhkan, lalu foto dan unggah KTP Anda.',
     color: '#1e5fb8',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75">
@@ -66,10 +66,10 @@ export default function HowItWorksSection() {
           >
             Proses Mudah & Cepat
           </span>
-          <h2 className="font-medium text-[36px] text-[#1a1a1a] leading-10 tracking-[0.37px]">
+          <h2 className="font-medium text-[#1a1a1a] leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
             Cara Kerja SADEWA
           </h2>
-          <p className="mt-4 text-[18px] text-[#6b7280] leading-7 max-w-[560px] mx-auto">
+          <p className="mt-4 text-[15px] sm:text-[18px] text-[#6b7280] leading-7 max-w-[560px] mx-auto">
             Empat langkah sederhana untuk mendapatkan dokumen administrasi desa secara online
           </p>
         </div>

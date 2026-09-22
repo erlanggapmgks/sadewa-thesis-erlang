@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthContext } from '../../context/AuthContext'
 import { ROUTES } from '../../routes/routes'
@@ -11,59 +11,13 @@ import { ocrDocument } from '../../services/geminiService'
 const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
 
-// ── Session state persistence (anti-reset saat switch tab / tab discard / reload) ──
-const SESSION_KEY = 'sadewa_request_doc_state_v1'
-const FILE_KEY    = 'sadewa_request_ktp_file_v1'   // stores base64 DataURL of KTP file
-
-function readPersistedState() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return (parsed && typeof parsed === 'object') ? parsed : null
-  } catch { return null }
-}
-function readPersistedKtp() {
-  try {
-    const raw = localStorage.getItem(FILE_KEY)
-    if (!raw) return null
-    try { return JSON.parse(raw) } catch { return { userId: null, dataUrl: raw } }
-  } catch { return null }
-}
-const saved = readPersistedState()
-const savedKtpEntry = readPersistedKtp()
-
-// Helpers: convert File <-> base64 DataURL for persistence
-function fileToDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader()
-    r.onerror = () => reject(r.error)
-    r.onload  = () => resolve(String(r.result || ''))
-    r.readAsDataURL(file)
-  })
-}
-function dataURLtoFile(dataUrl, filename = 'ktp.jpg') {
-  try {
-    const arr = dataUrl.split(',')
-    const mimeMatch = arr[0].match(/:(.*?);/)
-    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
-    const bstr = atob(arr[1])
-    let n = bstr.length
-    const u8arr = new Uint8Array(n)
-    while (n--) u8arr[n] = bstr.charCodeAt(n)
-    return new File([u8arr], filename, { type: mime })
-  } catch {
-    return null
-  }
-}
-
 const SERVICES = [
-  { id: 'domisili',  label: 'Surat Keterangan Domisili',      desc: 'Bukti tempat tinggal resmi',              duration: '2–3 hari' },
-  { id: 'pengantar', label: 'Surat Pengantar',                 desc: 'Pengantar untuk keperluan umum',          duration: '1–2 hari' },
-  { id: 'sktm',      label: 'Surat Keterangan Tidak Mampu',   desc: 'Keterangan kondisi ekonomi',              duration: '2–3 hari' },
-  { id: 'usaha',     label: 'Surat Keterangan Usaha',         desc: 'Legalitas usaha mikro/kecil',             duration: '3–5 hari' },
-  { id: 'kelahiran', label: 'Surat Keterangan Kelahiran',     desc: 'Keterangan kelahiran anak',               duration: '1–2 hari' },
-  { id: 'kematian',  label: 'Surat Keterangan Kematian',      desc: 'Keterangan anggota keluarga wafat',       duration: '1–2 hari' },
+  { id: 'domisili',  label: 'Surat Keterangan Domisili',    desc: 'Bukti tempat tinggal resmi',          duration: '2–3 hari' },
+  { id: 'pengantar', label: 'Surat Pengantar',               desc: 'Pengantar untuk keperluan umum',      duration: '1–2 hari' },
+  { id: 'sktm',      label: 'Surat Keterangan Tidak Mampu', desc: 'Keterangan kondisi ekonomi',          duration: '2–3 hari' },
+  { id: 'usaha',     label: 'Surat Keterangan Usaha',       desc: 'Legalitas usaha mikro/kecil',         duration: '3–5 hari' },
+  { id: 'kelahiran', label: 'Surat Keterangan Kelahiran',   desc: 'Keterangan kelahiran anak',           duration: '1–2 hari' },
+  { id: 'kematian',  label: 'Surat Keterangan Kematian',    desc: 'Keterangan anggota keluarga wafat',   duration: '1–2 hari' },
 ]
 
 const SERVICE_LABELS = Object.fromEntries(SERVICES.map(s => [s.id, s.label]))
@@ -91,25 +45,24 @@ const ADDITIONAL_FIELDS = {
   ],
 }
 
-const STEPS = ['Pilih Layanan', 'Unggah Dokumen', 'Verifikasi AI', 'Konfirmasi']
+const STEPS = ['Pilih Layanan', 'Scan KTP', 'Verifikasi AI', 'Konfirmasi']
 
-// ── AI processing — Gemini Flash (primary) → Tesseract (fallback offline) ────
+// ── AI processing ──────────────────────────────────────────────────────────────
 
-async function runAIProcessing(ktpFile, userName) {
+async function runAIProcessing(ktpFile) {
   const ocr = await ocrDocument(ktpFile)
   if (!ocr) return null
-
   const ktpQuality = ocr.quality === 'bad' ? 'bad' : ocr.quality === 'blurry' ? 'blurry' : 'good'
   return {
     quality: { ktp: ktpQuality },
     completeness: {
       name:      !!ocr.nama,
-      nik:       ocr.nik.length === 16,
+      nik:       ocr.nik?.length === 16,
       address:   !!ocr.alamat,
       birthDate: !!ocr.tanggalLahir,
     },
     extracted: {
-      name:       ocr.nama        || userName || '',
+      name:       ocr.nama        || '',
       nik:        ocr.nik         || '',
       address:    ocr.alamat      || '',
       birthPlace: ocr.tempatLahir || '',
@@ -127,7 +80,6 @@ function DocumentIcon({ color = '#6b7280', size = 24 }) {
     </svg>
   )
 }
-
 function UploadIcon() {
   return (
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" aria-hidden="true">
@@ -135,7 +87,6 @@ function UploadIcon() {
     </svg>
   )
 }
-
 function CheckIcon({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
@@ -143,7 +94,6 @@ function CheckIcon({ size = 16 }) {
     </svg>
   )
 }
-
 function ChevronRightIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -151,7 +101,6 @@ function ChevronRightIcon() {
     </svg>
   )
 }
-
 function SpinnerIcon() {
   return (
     <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -168,7 +117,7 @@ function StepIndicator({ current }) {
     <div className="flex items-center justify-center gap-0 mb-8">
       {STEPS.map((label, i) => {
         const idx = i + 1
-        const done = idx < current
+        const done   = idx < current
         const active = idx === current
         return (
           <div key={label} className="flex items-center">
@@ -210,7 +159,6 @@ function UploadZone({ label, file, preview, onFile, accept = 'image/*' }) {
     const f = e.dataTransfer.files[0]
     if (f) onFile(f)
   }
-
   function handleChange(e) {
     const f = e.target.files[0]
     if (f) onFile(f)
@@ -227,12 +175,12 @@ function UploadZone({ label, file, preview, onFile, accept = 'image/*' }) {
         style={{
           borderColor: file ? '#16a372' : '#d1d5db',
           background: file ? 'rgba(22,163,114,0.03)' : '#fafafa',
-          minHeight: 140,
+          minHeight: 160,
         }}
       >
         {preview ? (
           <div className="relative">
-            <img src={preview} alt={label} className="w-full h-36 object-cover" />
+            <img src={preview} alt={label} className="w-full h-40 object-cover" />
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
               <span className="text-white text-[13px] font-medium">Ganti Foto</span>
             </div>
@@ -241,161 +189,188 @@ function UploadZone({ label, file, preview, onFile, accept = 'image/*' }) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-8">
+          <div className="flex flex-col items-center justify-center gap-2 py-10">
             <UploadIcon />
-            <p className="text-[13px] text-[#6b7280] leading-5 text-center px-4">
-              Klik atau seret foto di sini
-            </p>
+            <p className="text-[13px] text-[#6b7280] leading-5 text-center px-4">Klik atau seret foto di sini</p>
             <p className="text-[11px] text-[#9ca3af]">JPG, PNG, maks. 5MB</p>
           </div>
         )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept}
-          onChange={handleChange}
-          className="hidden"
-        />
+        <input ref={inputRef} type="file" accept={accept} onChange={handleChange} className="hidden" />
       </div>
-      {file && (
-        <p className="text-[12px] text-green-600 leading-4">✓ {file.name}</p>
-      )}
+      {file && <p className="text-[12px] text-green-600 leading-4">✓ {file.name}</p>}
     </div>
   )
 }
 
 function QualityBadge({ status }) {
   const map = {
-    good:      { label: 'Kualitas Baik',    bg: 'rgba(22,163,114,0.1)',  color: '#059669' },
-    blurred:   { label: 'Foto Buram',        bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
-    dark:      { label: 'Foto Terlalu Gelap',bg: 'rgba(245,158,11,0.1)', color: '#d97706' },
-    invalid:   { label: 'Format Tidak Valid',bg: 'rgba(239,68,68,0.1)',   color: '#dc2626' },
+    good:    { label: 'Kualitas Baik',     bg: 'rgba(22,163,114,0.1)',  color: '#059669' },
+    blurry:  { label: 'Foto Buram',        bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
+    bad:     { label: 'Foto Tidak Valid',  bg: 'rgba(239,68,68,0.1)',   color: '#dc2626' },
   }
   const s = map[status] ?? map.good
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium"
-      style={{ background: s.bg, color: s.color }}
-    >
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: s.bg, color: s.color }}>
       {status === 'good' && <CheckIcon size={12} />}
       {s.label}
     </span>
   )
 }
 
+// Panel yang menampilkan hasil pencocokan NIK dengan database warga
+function CitizenMatchPanel({ status, citizen }) {
+  if (status === 'searching') {
+    return (
+      <div className="flex items-center gap-3 p-4 rounded-lg border border-[#e5e7eb] bg-[#f9fafb]">
+        <svg className="animate-spin w-4 h-4 text-[#1e5fb8] shrink-0" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        <span className="text-[13px] text-[#6b7280]">Mencari data warga di sistem...</span>
+      </div>
+    )
+  }
+
+  if (status === 'found') {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-lg" style={{ background: 'rgba(22,163,114,0.07)', border: '1px solid rgba(22,163,114,0.2)' }}>
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+          <CheckIcon size={14} />
+        </div>
+        <div>
+          <p className="text-[13px] font-semibold text-green-700">Warga Ditemukan</p>
+          <p className="text-[13px] text-green-700 mt-0.5">{citizen?.full_name}</p>
+          <p className="text-[12px] text-green-600 mt-0.5">NIK: {citizen?.nik} · {citizen?.email}</p>
+          <p className="text-[11px] text-green-600 mt-1">Permohonan akan dikaitkan dengan akun warga ini.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'not_found') {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-lg" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="shrink-0 mt-0.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+        <div>
+          <p className="text-[13px] font-semibold text-amber-700">NIK Tidak Ditemukan di Sistem</p>
+          <p className="text-[13px] text-amber-700 mt-0.5 leading-5">
+            Warga belum memiliki akun. Permohonan tetap dapat diproses menggunakan data hasil scan KTP.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
+
+function SummaryRow({ label, value, mono = false }) {
+  return (
+    <div className="flex gap-4 py-3 border-b border-[#f3f4f6] last:border-0">
+      <span className="text-[13px] text-[#6b7280] w-36 shrink-0">{label}</span>
+      <span className="text-[13px] text-[#1a1a1a] flex-1" style={mono ? { fontFamily: 'Menlo, monospace', letterSpacing: '0.05em' } : {}}>
+        {value || '—'}
+      </span>
+    </div>
+  )
+}
+
+const AI_STEPS = [
+  'Membaca kualitas dokumen...',
+  'Mengekstrak data KTP...',
+  'Memeriksa kelengkapan data...',
+  'Menyelesaikan verifikasi AI...',
+]
+
+function AIProcessingState({ progress }) {
+  const activeStep = Math.min(Math.floor((progress / 100) * AI_STEPS.length), AI_STEPS.length - 1)
+  return (
+    <div className="flex flex-col items-center py-10 gap-8">
+      <div className="relative w-20 h-20">
+        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#e5e7eb" strokeWidth="6" />
+          <circle
+            cx="40" cy="40" r="34" fill="none"
+            stroke="#1e5fb8" strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={`${2 * Math.PI * 34}`}
+            strokeDashoffset={`${2 * Math.PI * 34 * (1 - progress / 100)}`}
+            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[14px] font-semibold text-[#1e5fb8]">{progress}%</span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        {AI_STEPS.map((s, i) => (
+          <div key={s} className="flex items-center gap-3">
+            <div
+              className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors"
+              style={{ background: i < activeStep ? '#16a372' : i === activeStep ? '#1e5fb8' : '#e5e7eb' }}
+            >
+              {i < activeStep ? <CheckIcon size={10} /> : i === activeStep ? <SpinnerIcon /> : null}
+            </div>
+            <span className="text-[13px] leading-5" style={{ color: i <= activeStep ? '#1a1a1a' : '#9ca3af' }}>{s}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function RequestDocumentPage() {
-  const navigate   = useNavigate()
-  const { user }   = useAuthContext()
+export default function WalkInRequestPage() {
+  const navigate = useNavigate()
+  const { user } = useAuthContext()
 
-  // ── State declarations (restore from session storage to avoid tab-discard reset)
-  const [step, setStep] = useState(saved?.step ?? 1)
+  const [step, setStep] = useState(1)
 
   // Step 1
-  const [selectedService, setSelectedService] = useState(saved?.selectedService ?? null)
-  const [purpose, setPurpose]                 = useState(saved?.purpose ?? '')
-  const [step1Errors, setStep1Errors]         = useState(saved?.step1Errors ?? {})
-  const [additionalData, setAdditionalData]   = useState(saved?.additionalData ?? {})
-  const [additionalErrors, setAdditionalErrors] = useState(saved?.additionalErrors ?? {})
+  const [selectedService, setSelectedService]   = useState(null)
+  const [purpose, setPurpose]                   = useState('')
+  const [step1Errors, setStep1Errors]           = useState({})
+  const [additionalData, setAdditionalData]     = useState({})
+  const [additionalErrors, setAdditionalErrors] = useState({})
 
-  // Step 2 — ONLY KTP is required. KK removed per product update (2026-08-26).
-  // Hanya restore KTP jika userId cocok dengan user yang sedang login.
-  const ktpBelongsToUser   = savedKtpEntry?.userId === user?.id
-  const restoredKtpDataUrl = ktpBelongsToUser ? (savedKtpEntry?.dataUrl ?? null) : null
-
-  const [ktpFile, setKtpFile]       = useState(() => (restoredKtpDataUrl ? dataURLtoFile(restoredKtpDataUrl) : null))
-  const [ktpPreview, setKtpPreview] = useState(() => {
-    if (ktpBelongsToUser && saved?.ktpPreview) return saved.ktpPreview
-    if (restoredKtpDataUrl) return restoredKtpDataUrl
-    return null
-  })
-  const [step2Error, setStep2Error] = useState(saved?.step2Error ?? '')
+  // Step 2
+  const [ktpFile, setKtpFile]       = useState(null)
+  const [ktpPreview, setKtpPreview] = useState(null)
+  const [step2Error, setStep2Error] = useState('')
 
   // Step 3 – AI
-  const [aiLoading, setAiLoading]   = useState(saved?.aiLoading ?? false)
-  const [aiResult, setAiResult]     = useState(saved?.aiResult ?? null)
-  const [aiProgress, setAiProgress] = useState(saved?.aiProgress ?? 0)
-  const [extracted, setExtracted]   = useState(saved?.extracted ?? {
-    name: '', nik: '', birthPlace: '', birthDate: '', address: '',
-  })
+  const [aiLoading, setAiLoading]     = useState(false)
+  const [aiResult, setAiResult]       = useState(null)
+  const [aiProgress, setAiProgress]   = useState(0)
+  const [extracted, setExtracted]     = useState({ name: '', nik: '', birthPlace: '', birthDate: '', address: '' })
+
+  // Citizen lookup
+  const [citizenStatus, setCitizenStatus] = useState(null) // null | 'searching' | 'found' | 'not_found'
+  const [citizenData, setCitizenData]     = useState(null)
 
   // Step 4 – Submit
-  const [submitting, setSubmitting] = useState(saved?.submitting ?? false)
-  const [submitted, setSubmitted]   = useState(saved?.submitted ?? false)
-  const [requestId, setRequestId]   = useState(saved?.requestId ?? null)
-  const [submitError, setSubmitError] = useState(saved?.submitError ?? '')
+  const [imgZoomed, setImgZoomed]     = useState(false)
 
-  // ── Bersihkan cache KTP milik user lain saat komponen pertama kali mount ─────
-  useEffect(() => {
-    if (savedKtpEntry?.userId && savedKtpEntry.userId !== user?.id) {
-      localStorage.removeItem(FILE_KEY)
-      sessionStorage.removeItem(SESSION_KEY)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [submitting, setSubmitting]   = useState(false)
+  const [submitted, setSubmitted]     = useState(false)
+  const [requestId, setRequestId]     = useState(null)
+  const [submitError, setSubmitError] = useState('')
 
-  // ── Persist serializable state to sessionStorage + KTP file base64 to localStorage
-  // This prevents data loss when user switches tabs and Chrome Memory Saver discards
-  // the tab (causing a full React re-mount when user switches back).
-  useEffect(() => {
-    try {
-      const snapshot = {
-        step,
-        selectedService,
-        purpose,
-        step1Errors,
-        additionalData,
-        additionalErrors,
-        ktpPreview,
-        step2Error,
-        aiLoading,
-        aiResult,
-        aiProgress,
-        extracted,
-        submitting,
-        submitted,
-        requestId,
-        submitError,
-      }
-      if (submitted && requestId) {
-        sessionStorage.removeItem(SESSION_KEY)
-        localStorage.removeItem(FILE_KEY)
-      } else {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(snapshot))
-        // Persist actual KTP file bytes as base64 so we can reconstruct the File
-        // object after tab-discard remount (File objects themselves can't be serialized)
-        if (ktpFile) {
-          fileToDataURL(ktpFile).then(b64 => {
-            try { localStorage.setItem(FILE_KEY, JSON.stringify({ userId: user.id, dataUrl: b64 })) } catch { /* storage full, ignore */ }
-          }).catch(() => {})
-        }
-      }
-    } catch { /* storage full / disabled — silently ignore */ }
-  }, [
-    step, selectedService, purpose, step1Errors, additionalData, additionalErrors,
-    ktpFile, ktpPreview, step2Error, aiLoading, aiResult, aiProgress, extracted,
-    submitting, submitted, requestId, submitError,
-  ])
-
-  // ── File handlers ──────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleKtpFile(file) {
     setKtpFile(file)
     setKtpPreview(URL.createObjectURL(file))
     setStep2Error('')
-    // Immediately persist new KTP file base64 to localStorage so even if tab
-    // gets discarded before the useEffect autosave fires, we don't lose the file.
-    fileToDataURL(file).then(b64 => {
-      try { localStorage.setItem(FILE_KEY, JSON.stringify({ userId: user.id, dataUrl: b64 })) } catch {}
-    }).catch(() => {})
   }
-
-  // ── Step navigation ────────────────────────────────────────────────────────
 
   function goStep1() {
     const e = {}
     if (!selectedService) e.service = 'Pilih jenis layanan yang dibutuhkan.'
-    if (!purpose.trim())  e.purpose = 'Tuliskan keperluan Anda.'
+    if (!purpose.trim())  e.purpose = 'Tuliskan keperluan.'
 
     const addErrs = {}
     ;(ADDITIONAL_FIELDS[selectedService] ?? []).forEach(f => {
@@ -416,18 +391,19 @@ export default function RequestDocumentPage() {
 
   async function goStep3() {
     if (!ktpFile) {
-      setStep2Error('Unggah foto KTP terlebih dahulu.')
+      setStep2Error('Unggah atau scan foto KTP terlebih dahulu.')
       return
     }
     setStep2Error('')
     setStep(3)
     setAiLoading(true)
     setAiProgress(0)
+    setAiResult(null)
+    setCitizenStatus(null)
+    setCitizenData(null)
 
     const timer = setInterval(() => setAiProgress(p => Math.min(p + 12, 90)), 300)
-
-    const result = await runAIProcessing(ktpFile, user?.name)
-
+    const result = await runAIProcessing(ktpFile)
     clearInterval(timer)
     setAiProgress(100)
     await new Promise(r => setTimeout(r, 400))
@@ -442,6 +418,18 @@ export default function RequestDocumentPage() {
     setAiResult(result)
     setExtracted(result.extracted)
     setAiLoading(false)
+
+    // Auto-lookup citizen by NIK setelah OCR selesai
+    if (result.extracted.nik && supabase) {
+      setCitizenStatus('searching')
+      const citizen = await documentService.findCitizenByNik(result.extracted.nik)
+      if (citizen) {
+        setCitizenData(citizen)
+        setCitizenStatus('found')
+      } else {
+        setCitizenStatus('not_found')
+      }
+    }
   }
 
   async function handleSubmit() {
@@ -449,21 +437,17 @@ export default function RequestDocumentPage() {
     setSubmitError('')
 
     if (!supabase) {
-      await new Promise(r => setTimeout(r, 1000))
-      const newId = 'DEMO-' + Date.now().toString().slice(-6)
-      const existing = JSON.parse(sessionStorage.getItem('sadewa_demo_requests') ?? '[]')
-      existing.unshift({ id: newId, service_type: selectedService, status: 'pending', created_at: new Date().toISOString() })
-      sessionStorage.setItem('sadewa_demo_requests', JSON.stringify(existing))
-      setRequestId(newId)
+      await new Promise(r => setTimeout(r, 800))
+      setRequestId('DEMO-' + Date.now().toString().slice(-6))
       setSubmitted(true)
       setSubmitting(false)
       return
     }
 
     try {
-      // Upload ONLY KTP. KK upload removed per product update (2026-08-26).
-      const ktpRes = await documentService.uploadDocument(ktpFile, user.id, 'ktp.jpg')
-
+      // Pakai ID warga jika ditemukan, fallback ke ID admin sebagai folder storage
+      const storageOwnerId = citizenData?.id ?? user.id
+      const ktpRes = await documentService.uploadDocument(ktpFile, storageOwnerId, 'ktp.jpg')
       if (!ktpRes.ok) {
         setSubmitError('Gagal mengunggah dokumen KTP. Coba lagi.')
         setSubmitting(false)
@@ -472,7 +456,8 @@ export default function RequestDocumentPage() {
 
       const hasAddData = Object.keys(additionalData).length > 0
       const reqRes = await documentService.createDocumentRequest({
-        user_id: user.id,
+        user_id: citizenData?.id ?? null,   // null jika warga belum punya akun
+        submitted_by: user.id,              // admin yang menginput (audit trail)
         service_type: selectedService,
         status: 'pending',
         ktp_url: ktpRes.url,
@@ -495,7 +480,7 @@ export default function RequestDocumentPage() {
         address: extracted.address,
       })
 
-      setRequestId(reqRes.request.id.slice(0, 8).toUpperCase())
+      setRequestId(reqRes.request.id)
       setSubmitted(true)
     } catch {
       setSubmitError('Terjadi kesalahan. Coba lagi.')
@@ -504,17 +489,40 @@ export default function RequestDocumentPage() {
     setSubmitting(false)
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  function resetForm() {
+    setStep(1)
+    setSelectedService(null)
+    setPurpose('')
+    setStep1Errors({})
+    setAdditionalData({})
+    setAdditionalErrors({})
+    setKtpFile(null)
+    setKtpPreview(null)
+    setStep2Error('')
+    setAiLoading(false)
+    setAiResult(null)
+    setAiProgress(0)
+    setExtracted({ name: '', nik: '', birthPlace: '', birthDate: '', address: '' })
+    setCitizenStatus(null)
+    setCitizenData(null)
+    setSubmitting(false)
+    setSubmitted(false)
+    setRequestId(null)
+    setSubmitError('')
+  }
 
+  // ── Shared input style ────────────────────────────────────────────────────
   const inputBase =
     'w-full h-10 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg px-[13px] text-[14px] text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent'
 
+  // ── Success screen ────────────────────────────────────────────────────────
   if (submitted) {
+    const shortId = requestId?.slice(0, 8).toUpperCase() ?? requestId
     return (
       <div>
         <section style={{ background: HERO_GRADIENT }} className="py-8">
           <div className="max-w-[1280px] mx-auto px-4">
-            <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Permohonan Baru</h1>
+            <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Pengajuan Langsung</h1>
           </div>
         </section>
         <div className="max-w-[1280px] mx-auto px-4 py-12 flex justify-center">
@@ -524,28 +532,28 @@ export default function RequestDocumentPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>
             </div>
-            <h2 className="font-semibold text-[20px] text-[#1a1a1a] mb-2">Permohonan Terkirim!</h2>
-            <p className="text-[14px] text-[#6b7280] leading-6 mb-6">
-              Permohonan Anda telah diterima dan sedang menunggu verifikasi admin.
-              Nomor permohonan Anda:
+            <h2 className="font-semibold text-[20px] text-[#1a1a1a] mb-2">Permohonan Berhasil Dibuat!</h2>
+            <p className="text-[14px] text-[#6b7280] leading-6 mb-2">
+              Permohonan atas nama <strong>{citizenData?.full_name || extracted.name}</strong> telah masuk ke antrian.
             </p>
+            <p className="text-[14px] text-[#6b7280] leading-6 mb-6">Nomor permohonan:</p>
             <div className="bg-[#f3f4f6] rounded-lg px-4 py-3 mb-8">
               <p className="font-mono font-semibold text-[18px] text-[#1a1a1a] tracking-widest">
-                REQ-{requestId}
+                REQ-{shortId}
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate(ROUTES.CITIZEN_TRACK)}
+                onClick={() => navigate(ROUTES.ADMIN_REQUEST_DETAIL.replace(':id', requestId))}
                 className="w-full h-11 bg-[#1e5fb8] rounded-lg text-white font-medium text-[15px] hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
               >
-                Pantau Status
+                Tinjau Permohonan
               </button>
               <button
-                onClick={() => navigate(ROUTES.CITIZEN_DASHBOARD)}
+                onClick={resetForm}
                 className="w-full h-11 bg-white border border-[#e5e7eb] rounded-lg text-[#1a1a1a] font-medium text-[15px] hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                Kembali ke Dashboard
+                Pengajuan Warga Berikutnya
               </button>
             </div>
           </div>
@@ -554,19 +562,19 @@ export default function RequestDocumentPage() {
     )
   }
 
+  // ── Main render ───────────────────────────────────────────────────────────
   return (
     <div>
       {/* Hero */}
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Permohonan Baru</h1>
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Pengajuan Langsung</h1>
           <p className="mt-2 text-[14px] sm:text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
-            Ajukan permohonan layanan administrasi desa
+            Bantu warga yang datang langsung ke kantor — scan KTP, AI baca data otomatis
           </p>
         </div>
       </section>
 
-      {/* Content */}
       <div className="max-w-[1280px] mx-auto px-4 py-10">
         <div className="max-w-[720px] mx-auto">
           <StepIndicator current={step} />
@@ -576,7 +584,7 @@ export default function RequestDocumentPage() {
             <div className="bg-white border border-[#e5e7eb] rounded-xl" style={CARD_SHADOW}>
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
                 <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Pilih Layanan</h2>
-                <p className="mt-1 text-[14px] text-[#6b7280]">Pilih jenis surat yang Anda butuhkan</p>
+                <p className="mt-1 text-[14px] text-[#6b7280]">Pilih jenis surat yang dibutuhkan warga</p>
               </div>
               <div className="p-6 flex flex-col gap-6">
                 {/* Service grid */}
@@ -626,14 +634,14 @@ export default function RequestDocumentPage() {
                   <textarea
                     value={purpose}
                     onChange={e => { setPurpose(e.target.value); setStep1Errors(err => ({ ...err, purpose: '' })) }}
-                    placeholder="Contoh: Saya membutuhkan surat domisili untuk keperluan melamar pekerjaan..."
+                    placeholder="Contoh: Warga membutuhkan surat domisili untuk keperluan melamar pekerjaan..."
                     rows={3}
                     className={`w-full bg-[#f9fafb] border rounded-lg px-[13px] py-[9px] text-[14px] text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] leading-5 resize-none focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent ${step1Errors.purpose ? 'border-red-400' : 'border-[#e5e7eb]'}`}
                   />
                   {step1Errors.purpose && <p className="text-[12px] text-red-500">{step1Errors.purpose}</p>}
                 </div>
 
-                {/* ── Data tambahan per jenis surat ── */}
+                {/* Data tambahan per jenis surat */}
                 {selectedService && (ADDITIONAL_FIELDS[selectedService] ?? []).length > 0 && (
                   <div className="flex flex-col gap-4 pt-2">
                     <div>
@@ -694,19 +702,19 @@ export default function RequestDocumentPage() {
             </div>
           )}
 
-          {/* ── Step 2: Unggah Dokumen ── */}
+          {/* ── Step 2: Scan KTP ── */}
           {step === 2 && (
             <div className="bg-white border border-[#e5e7eb] rounded-xl" style={CARD_SHADOW}>
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
-                <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Unggah Dokumen</h2>
+                <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Scan / Unggah KTP Warga</h2>
                 <p className="mt-1 text-[14px] text-[#6b7280]">
-                  Foto KTP akan dibaca otomatis oleh sistem AI
+                  Foto atau scan KTP warga yang datang langsung
                 </p>
               </div>
               <div className="p-6 flex flex-col gap-6">
                 <div className="max-w-md mx-auto w-full">
                   <UploadZone
-                    label="Foto KTP"
+                    label="Foto KTP Warga"
                     file={ktpFile}
                     preview={ktpPreview}
                     onFile={handleKtpFile}
@@ -715,16 +723,19 @@ export default function RequestDocumentPage() {
 
                 {step2Error && <p className="text-[13px] text-red-500">{step2Error}</p>}
 
-                <div
-                  className="flex items-start gap-3 p-4 rounded-lg"
-                  style={{ background: 'rgba(30,95,184,0.05)', border: '1px solid rgba(30,95,184,0.12)' }}
-                >
+                {/* Tips untuk admin */}
+                <div className="flex items-start gap-3 p-4 rounded-lg" style={{ background: 'rgba(30,95,184,0.05)', border: '1px solid rgba(30,95,184,0.12)' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e5fb8" strokeWidth="2" className="shrink-0 mt-0.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                   </svg>
-                  <p className="text-[13px] text-[#1e5fb8] leading-5">
-                    Pastikan foto KTP jelas, tidak buram, dan tidak terpotong. AI akan membaca data secara otomatis.
-                  </p>
+                  <div>
+                    <p className="text-[13px] font-medium text-[#1e5fb8] mb-1">Tips untuk hasil terbaik</p>
+                    <ul className="text-[13px] text-[#1e5fb8] leading-5 list-disc list-inside space-y-0.5">
+                      <li>Letakkan KTP di permukaan datar di bawah pencahayaan yang cukup</li>
+                      <li>Pastikan semua teks terbaca dan tidak terpotong</li>
+                      <li>Gunakan mode scan dokumen jika tersedia di kamera</li>
+                    </ul>
+                  </div>
                 </div>
 
                 <div className="flex justify-between">
@@ -745,34 +756,168 @@ export default function RequestDocumentPage() {
             </div>
           )}
 
-          {/* ── Step 3: AI Verification ── */}
+          {/* ── Step 3: Verifikasi AI ── */}
           {step === 3 && (
             <div className="bg-white border border-[#e5e7eb] rounded-xl" style={CARD_SHADOW}>
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
                 <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Verifikasi AI</h2>
                 <p className="mt-1 text-[14px] text-[#6b7280]">
-                  {aiLoading ? 'Sistem AI sedang membaca dokumen Anda...' : 'Periksa dan konfirmasi data yang dibaca AI'}
+                  {aiLoading ? 'Sistem AI sedang membaca KTP warga...' : 'Periksa data hasil baca AI dan status warga'}
                 </p>
               </div>
               <div className="p-6">
                 {aiLoading ? (
                   <AIProcessingState progress={aiProgress} />
                 ) : aiResult ? (
-                  <AIResultState
-                    result={aiResult}
-                    extracted={extracted}
-                    setExtracted={setExtracted}
-                    inputBase={inputBase}
-                    ktpPreview={ktpPreview}
-                    onBack={() => setStep(2)}
-                    onConfirm={() => setStep(4)}
-                  />
+                  <div className="flex flex-col gap-6">
+                    {/* Kualitas dokumen */}
+                    <div>
+                      <p className="text-[13px] font-medium text-[#1a1a1a] mb-3">Kualitas Dokumen</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] text-[#6b7280]">KTP:</span>
+                        <QualityBadge status={aiResult.quality.ktp} />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-[#f3f4f6]" />
+
+                    {/* KTP preview + form side by side */}
+                    <div className="flex flex-col sm:flex-row gap-5 items-start">
+
+                      {/* KTP image — tetap terlihat saat mengisi form */}
+                      {ktpPreview && (
+                        <div className="flex flex-col gap-2 w-full sm:w-52 shrink-0">
+                          <p className="font-medium text-[13px] text-[#1a1a1a]">Foto KTP</p>
+                          <button
+                            type="button"
+                            onClick={() => setImgZoomed(true)}
+                            className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
+                          >
+                            <img
+                              src={ktpPreview}
+                              alt="KTP"
+                              className="w-full rounded-lg border border-[#e5e7eb] object-cover hover:opacity-90 transition-opacity"
+                              style={{ maxHeight: 220 }}
+                            />
+                          </button>
+                          <p className="text-[11px] text-[#9ca3af] text-center">Klik untuk perbesar</p>
+                        </div>
+                      )}
+
+                      {/* Lightbox overlay */}
+                      {imgZoomed && (
+                        <div
+                          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+                          onClick={() => setImgZoomed(false)}
+                        >
+                          <img
+                            src={ktpPreview}
+                            alt="KTP"
+                            className="max-w-[92vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setImgZoomed(false)}
+                            className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border-0"
+                            style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Data hasil OCR */}
+                      <div className="flex flex-col gap-4 flex-1 min-w-0">
+                        <div className="flex flex-col gap-1">
+                          <p className="font-medium text-[14px] text-[#1a1a1a]">Data Hasil Pembacaan AI</p>
+                          <p className="text-[13px] text-[#6b7280]">Koreksi jika ada kesalahan pembacaan sebelum melanjutkan</p>
+                        </div>
+                        {[
+                          { key: 'name', label: 'Nama Lengkap', placeholder: 'Nama sesuai KTP' },
+                          { key: 'nik',  label: 'NIK',          placeholder: '16 digit NIK' },
+                        ].map(({ key, label, placeholder }) => (
+                          <div key={key} className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <label className="font-medium text-[13px] text-[#1a1a1a]">{label}</label>
+                              {aiResult.completeness[key !== 'name' ? key : 'name'] && (
+                                <span className="text-[11px] text-green-600 flex items-center gap-0.5">
+                                  <CheckIcon size={10} /> Terdeteksi
+                                </span>
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={extracted[key]}
+                              onChange={e => setExtracted(prev => ({ ...prev, [key]: e.target.value }))}
+                              placeholder={placeholder}
+                              className={inputBase}
+                            />
+                          </div>
+                        ))}
+                        <div className="grid grid-cols-2 gap-4">
+                          {[
+                            { key: 'birthPlace', label: 'Tempat Lahir', placeholder: 'Kota kelahiran' },
+                            { key: 'birthDate',  label: 'Tanggal Lahir', placeholder: 'YYYY-MM-DD' },
+                          ].map(({ key, label, placeholder }) => (
+                            <div key={key} className="flex flex-col gap-1.5">
+                              <label className="font-medium text-[13px] text-[#1a1a1a]">{label}</label>
+                              <input
+                                type="text"
+                                value={extracted[key]}
+                                onChange={e => setExtracted(prev => ({ ...prev, [key]: e.target.value }))}
+                                placeholder={placeholder}
+                                className={inputBase}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="font-medium text-[13px] text-[#1a1a1a]">Alamat</label>
+                          <input
+                            type="text"
+                            value={extracted.address}
+                            onChange={e => setExtracted(prev => ({ ...prev, address: e.target.value }))}
+                            placeholder="Alamat sesuai KTP"
+                            className={inputBase}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-[#f3f4f6]" />
+
+                    {/* Identifikasi warga di sistem */}
+                    <div>
+                      <p className="font-medium text-[14px] text-[#1a1a1a] mb-3">Identifikasi Warga</p>
+                      <CitizenMatchPanel status={citizenStatus} citizen={citizenData} />
+                    </div>
+
+                    <div className="flex justify-between pt-2">
+                      <button
+                        onClick={() => setStep(2)}
+                        className="h-10 px-5 bg-white border border-[#e5e7eb] text-[#1a1a1a] rounded-lg font-medium text-[14px] hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Kembali
+                      </button>
+                      <button
+                        onClick={() => setStep(4)}
+                        disabled={citizenStatus === 'searching'}
+                        className="flex items-center gap-2 h-10 px-6 bg-[#1e5fb8] text-white rounded-lg font-medium text-[14px] hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={citizenStatus === 'searching' ? 'Menunggu hasil pencarian warga...' : ''}
+                      >
+                        Konfirmasi Data <ChevronRightIcon />
+                      </button>
+                    </div>
+                  </div>
                 ) : null}
               </div>
             </div>
           )}
 
-          {/* ── Step 4: Confirmation ── */}
+          {/* ── Step 4: Konfirmasi ── */}
           {step === 4 && (
             <div className="bg-white border border-[#e5e7eb] rounded-xl" style={CARD_SHADOW}>
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
@@ -780,8 +925,32 @@ export default function RequestDocumentPage() {
                 <p className="mt-1 text-[14px] text-[#6b7280]">Periksa kembali sebelum mengirim</p>
               </div>
               <div className="p-6 flex flex-col gap-5">
+                {/* Warga badge — dua kondisi: terhubung akun atau tidak */}
+                {citizenData ? (
+                  <div className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'rgba(22,163,114,0.07)', border: '1px solid rgba(22,163,114,0.2)' }}>
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                      <CheckIcon size={14} />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-green-700">{citizenData.full_name}</p>
+                      <p className="text-[12px] text-green-600">NIK: {citizenData.nik} · {citizenData.email}</p>
+                      <p className="text-[11px] text-green-600 mt-0.5">Permohonan akan dikaitkan dengan akun warga.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-amber-700">Pengajuan Tanpa Akun Sistem</p>
+                      <p className="text-[12px] text-amber-700">Data warga diambil dari hasil scan KTP.</p>
+                    </div>
+                  </div>
+                )}
 
-                {/* Summary */}
                 <div className="flex flex-col gap-3">
                   <SummaryRow label="Jenis Layanan"    value={SERVICE_LABELS[selectedService]} />
                   <SummaryRow label="Keperluan"         value={purpose} />
@@ -790,7 +959,6 @@ export default function RequestDocumentPage() {
                   <SummaryRow label="Tempat, Tgl Lahir" value={`${extracted.birthPlace}, ${extracted.birthDate}`} />
                   <SummaryRow label="Alamat"            value={extracted.address} />
 
-                  {/* Data tambahan per jenis surat */}
                   {(ADDITIONAL_FIELDS[selectedService] ?? []).length > 0 && (
                     <>
                       <div className="pt-2 pb-1">
@@ -803,15 +971,15 @@ export default function RequestDocumentPage() {
                   )}
                 </div>
 
-                {/* Document preview thumbnails */}
-                <div className="flex gap-4 pt-2">
-                  {ktpPreview && (
+                {/* KTP thumbnail */}
+                {ktpPreview && (
+                  <div className="flex gap-4 pt-2">
                     <div className="flex flex-col gap-1">
                       <p className="text-[12px] text-[#6b7280] font-medium">KTP</p>
                       <img src={ktpPreview} className="w-28 h-16 object-cover rounded-lg border border-[#e5e7eb]" alt="KTP" />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {submitError && <p className="text-[13px] text-red-500">{submitError}</p>}
 
@@ -840,199 +1008,6 @@ export default function RequestDocumentPage() {
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-// ── AI Processing sub-components ──────────────────────────────────────────────
-
-const AI_STEPS = [
-  'Membaca kualitas dokumen...',
-  'Mengekstrak data KTP...',
-  'Memeriksa kelengkapan data...',
-  'Menyelesaikan verifikasi AI...',
-]
-
-function AIProcessingState({ progress }) {
-  const activeStep = Math.min(Math.floor((progress / 100) * AI_STEPS.length), AI_STEPS.length - 1)
-  return (
-    <div className="flex flex-col items-center py-10 gap-8">
-      <div className="relative w-20 h-20">
-        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="#e5e7eb" strokeWidth="6" />
-          <circle
-            cx="40" cy="40" r="34" fill="none"
-            stroke="#1e5fb8" strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 34}`}
-            strokeDashoffset={`${2 * Math.PI * 34 * (1 - progress / 100)}`}
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[14px] font-semibold text-[#1e5fb8]">{progress}%</span>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3 w-full max-w-xs">
-        {AI_STEPS.map((s, i) => (
-          <div key={s} className="flex items-center gap-3">
-            <div
-              className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors"
-              style={{
-                background: i < activeStep ? '#16a372' : i === activeStep ? '#1e5fb8' : '#e5e7eb',
-              }}
-            >
-              {i < activeStep
-                ? <CheckIcon size={10} />
-                : i === activeStep
-                ? <SpinnerIcon />
-                : null}
-            </div>
-            <span
-              className="text-[13px] leading-5"
-              style={{ color: i <= activeStep ? '#1a1a1a' : '#9ca3af' }}
-            >
-              {s}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AIResultState({ result, extracted, setExtracted, inputBase, ktpPreview, onBack, onConfirm }) {
-  const [imgZoomed, setImgZoomed] = useState(false)
-
-  function field(key, label, placeholder) {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <label className="font-medium text-[13px] text-[#1a1a1a]">{label}</label>
-          {result.completeness[key !== 'birthPlace' && key !== 'birthDate' ? key : 'birthDate'] && (
-            <span className="text-[11px] text-green-600 flex items-center gap-0.5">
-              <CheckIcon size={10} /> Terdeteksi
-            </span>
-          )}
-        </div>
-        <input
-          type="text"
-          value={extracted[key]}
-          onChange={e => setExtracted(prev => ({ ...prev, [key]: e.target.value }))}
-          placeholder={placeholder}
-          className={inputBase}
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Quality check */}
-      <div className="flex flex-col gap-3">
-        <p className="font-medium text-[14px] text-[#1a1a1a]">Kualitas Dokumen</p>
-        <div className="flex gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] text-[#6b7280]">KTP:</span>
-            <QualityBadge status={result.quality.ktp} />
-          </div>
-        </div>
-      </div>
-
-      <div className="border-t border-[#f3f4f6]" />
-
-      {/* KTP preview + form side by side */}
-      <div className="flex flex-col sm:flex-row gap-5 items-start">
-
-        {/* KTP image — tetap terlihat saat mengisi form */}
-        {ktpPreview && (
-          <div className="flex flex-col gap-2 w-full sm:w-52 shrink-0">
-            <p className="font-medium text-[13px] text-[#1a1a1a]">Foto KTP</p>
-            <button
-              type="button"
-              onClick={() => setImgZoomed(true)}
-              className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
-            >
-              <img
-                src={ktpPreview}
-                alt="KTP"
-                className="w-full rounded-lg border border-[#e5e7eb] object-cover hover:opacity-90 transition-opacity"
-                style={{ maxHeight: 220 }}
-              />
-            </button>
-            <p className="text-[11px] text-[#9ca3af] text-center">Klik untuk perbesar</p>
-          </div>
-        )}
-
-        {/* Lightbox overlay */}
-        {imgZoomed && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-            onClick={() => setImgZoomed(false)}
-          >
-            <img
-              src={ktpPreview}
-              alt="KTP"
-              className="max-w-[92vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              onClick={e => e.stopPropagation()}
-            />
-            <button
-              type="button"
-              onClick={() => setImgZoomed(false)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border-0"
-              style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
-
-        {/* Extracted data */}
-        <div className="flex flex-col gap-4 flex-1 min-w-0">
-          <div className="flex flex-col gap-1">
-            <p className="font-medium text-[14px] text-[#1a1a1a]">Data Hasil Pembacaan AI</p>
-            <p className="text-[13px] text-[#6b7280]">Periksa dan koreksi jika ada kesalahan pembacaan</p>
-          </div>
-          {field('name', 'Nama Lengkap', 'Nama sesuai KTP')}
-          {field('nik', 'NIK', '16 digit NIK')}
-          <div className="grid grid-cols-2 gap-4">
-            {field('birthPlace', 'Tempat Lahir', 'Kota kelahiran')}
-            {field('birthDate', 'Tanggal Lahir', 'YYYY-MM-DD')}
-          </div>
-          {field('address', 'Alamat', 'Alamat sesuai KTP')}
-        </div>
-      </div>
-
-      <div className="flex justify-between pt-2">
-        <button
-          onClick={onBack}
-          className="h-10 px-5 bg-white border border-[#e5e7eb] text-[#1a1a1a] rounded-lg font-medium text-[14px] hover:bg-gray-50 transition-colors cursor-pointer"
-        >
-          Kembali
-        </button>
-        <button
-          onClick={onConfirm}
-          className="flex items-center gap-2 h-10 px-6 bg-[#1e5fb8] text-white rounded-lg font-medium text-[14px] hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
-        >
-          Konfirmasi Data <ChevronRightIcon />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function SummaryRow({ label, value, mono = false }) {
-  return (
-    <div className="flex gap-4 py-3 border-b border-[#f3f4f6] last:border-0">
-      <span className="text-[13px] text-[#6b7280] w-36 shrink-0">{label}</span>
-      <span
-        className="text-[13px] text-[#1a1a1a] flex-1"
-        style={mono ? { fontFamily: 'Menlo, monospace', letterSpacing: '0.05em' } : {}}
-      >
-        {value || '—'}
-      </span>
     </div>
   )
 }

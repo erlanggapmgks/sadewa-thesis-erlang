@@ -23,6 +23,7 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_REQUESTS: '/admin/requests',
   ADMIN_REQUEST_DETAIL: '/admin/requests/:id',
+  ADMIN_WALK_IN: '/admin/walk-in',
   ADMIN_CITIZENS: '/admin/citizens',
   ADMIN_USERS: '/admin/users',
   ADMIN_SETTINGS: '/admin/settings',

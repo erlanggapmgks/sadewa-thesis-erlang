@@ -1,7 +1,7 @@
 const FEATURES = [
   {
     title: 'OCR Dokumen Otomatis',
-    description: 'Sistem membaca teks dari foto KTP dan KK menggunakan teknologi Optical Character Recognition, menghilangkan kebutuhan input manual.',
+    description: 'Sistem membaca teks dari foto KTP menggunakan teknologi Optical Character Recognition, menghilangkan kebutuhan input manual.',
     color: '#1e5fb8',
     bg: 'rgba(30,95,184,0.06)',
     icon: (
@@ -58,10 +58,10 @@ export default function FeaturesSection() {
           >
             Teknologi AI Terintegrasi
           </span>
-          <h2 className="font-medium text-[36px] text-[#1a1a1a] leading-10 tracking-[0.37px]">
+          <h2 className="font-medium text-[#1a1a1a] leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
             Fitur Kecerdasan Buatan
           </h2>
-          <p className="mt-4 text-[18px] text-[#6b7280] leading-7 max-w-[600px] mx-auto">
+          <p className="mt-4 text-[15px] sm:text-[18px] text-[#6b7280] leading-7 max-w-[600px] mx-auto">
             SADEWA menggunakan AI untuk membaca, memvalidasi, dan mengisi data dokumen
             secara otomatis sehingga proses administrasi lebih cepat dan akurat
           </p>

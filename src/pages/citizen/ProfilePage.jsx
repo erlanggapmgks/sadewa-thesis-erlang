@@ -106,8 +106,8 @@ export default function ProfilePage() {
       {/* Hero */}
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Profil Saya</h1>
-          <p className="mt-2 text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Profil Saya</h1>
+          <p className="mt-2 text-[14px] sm:text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Kelola informasi akun dan pantau riwayat permohonan Anda
           </p>
         </div>
@@ -253,40 +253,67 @@ export default function ProfilePage() {
               ) : requests.length === 0 ? (
                 <p className="px-6 py-10 text-center text-[14px] text-[#6b7280]">Belum ada permohonan</p>
               ) : (
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
-                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">No.</th>
-                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Layanan</th>
-                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tanggal</th>
-                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-[13px]">
+                      <thead>
+                        <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                          <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">No.</th>
+                          <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Layanan</th>
+                          <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tanggal</th>
+                          <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...requests]
+                          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                          .map(req => {
+                            const s = STATUS_CFG[req.status] ?? STATUS_CFG.pending
+                            return (
+                              <tr key={req.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
+                                <td className="px-6 py-3.5" style={{ fontFamily: 'Menlo, monospace', fontSize: '11px', color: '#9ca3af' }}>
+                                  REQ-{req.id.slice(-6).toUpperCase()}
+                                </td>
+                                <td className="px-6 py-3.5 font-medium text-[#1a1a1a]">
+                                  {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                                </td>
+                                <td className="px-6 py-3.5 text-[#6b7280]">{formatDate(req.created_at)}</td>
+                                <td className="px-6 py-3.5">
+                                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                                    style={{ background: s.bg, color: s.color }}>
+                                    {s.label}
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="md:hidden divide-y divide-[#f3f4f6]">
                     {[...requests]
                       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                      .map((req, i) => {
+                      .map(req => {
                         const s = STATUS_CFG[req.status] ?? STATUS_CFG.pending
                         return (
-                          <tr key={req.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
-                            <td className="px-6 py-3.5" style={{ fontFamily: 'Menlo, monospace', fontSize: '11px', color: '#9ca3af' }}>
-                              REQ-{req.id.slice(-6).toUpperCase()}
-                            </td>
-                            <td className="px-6 py-3.5 font-medium text-[#1a1a1a]">
-                              {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
-                            </td>
-                            <td className="px-6 py-3.5 text-[#6b7280]">{formatDate(req.created_at)}</td>
-                            <td className="px-6 py-3.5">
-                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
-                                style={{ background: s.bg, color: s.color }}>
-                                {s.label}
-                              </span>
-                            </td>
-                          </tr>
+                          <div key={req.id} className="px-4 py-3.5 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-medium text-[13px] text-[#1a1a1a] truncate">
+                                {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                              </p>
+                              <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>
+                                REQ-{req.id.slice(-6).toUpperCase()} · {formatDate(req.created_at)}
+                              </p>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium shrink-0"
+                              style={{ background: s.bg, color: s.color }}>
+                              {s.label}
+                            </span>
+                          </div>
                         )
                       })}
-                  </tbody>
-                </table>
+                  </div>
+                </>
               )}
             </div>
           </div>

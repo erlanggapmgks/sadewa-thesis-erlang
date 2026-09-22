@@ -124,8 +124,8 @@ export default function TrackRequestPage() {
     <div>
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Lacak Permohonan</h1>
-          <p className="mt-2 text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Lacak Permohonan</h1>
+          <p className="mt-2 text-[14px] sm:text-[16px] leading-6 tracking-[-0.31px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Pantau status semua permohonan yang telah Anda ajukan
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function TrackRequestPage() {
       <div className="max-w-[1280px] mx-auto px-4 pb-12">
         {/* Search + filter */}
         <div className="relative -mt-4 bg-white border border-[#e5e7eb] rounded-lg p-4" style={CARD_SHADOW}>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><SearchIcon /></div>
               <input
@@ -145,12 +145,12 @@ export default function TrackRequestPage() {
                 className="w-full h-[42px] bg-white border border-[#e5e7eb] rounded-lg pl-[41px] pr-4 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
               />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2">
               <FilterIcon />
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="h-[42px] bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] cursor-pointer"
+                className="h-[42px] flex-1 bg-white border border-[#e5e7eb] rounded-lg px-3 text-[14px] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] cursor-pointer"
               >
                 {FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -174,55 +174,93 @@ export default function TrackRequestPage() {
               </svg>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#e5e7eb]">
-                    {['No. Permohonan', 'Layanan', 'Tanggal Ajuan', 'Status', 'Progres', 'Aksi'].map(col => (
-                      <th key={col} className="px-4 py-3 text-left text-[13px] font-medium text-[#6b7280] whitespace-nowrap">
-                        {col}
-                      </th>
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb]">
+                      {['No. Permohonan', 'Layanan', 'Tanggal Ajuan', 'Status', 'Progres', 'Aksi'].map(col => (
+                        <th key={col} className="px-4 py-3 text-left text-[13px] font-medium text-[#6b7280] whitespace-nowrap">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-14 text-center text-[14px] text-[#6b7280]">
+                          Tidak ada permohonan yang ditemukan
+                        </td>
+                      </tr>
+                    ) : filtered.map(req => (
+                      <tr key={req.id} className="border-b border-[#e5e7eb] last:border-0 hover:bg-[#fafafa] transition-colors">
+                        <td className="px-4 py-4 text-[13px] text-[#1a1a1a] whitespace-nowrap" style={{ fontFamily: 'Menlo, monospace' }}>
+                          REQ-{req.id.slice(-6).toUpperCase()}
+                        </td>
+                        <td className="px-4 py-4 text-[13px] text-[#1a1a1a]">
+                          {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                        </td>
+                        <td className="px-4 py-4 text-[13px] text-[#6b7280] whitespace-nowrap">
+                          {formatDate(req.created_at)}
+                        </td>
+                        <td className="px-4 py-4"><StatusBadge status={req.status} /></td>
+                        <td className="px-4 py-4"><ProgressBar status={req.status} /></td>
+                        <td className="px-4 py-4">
+                          {req.status === 'completed' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
+                              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
+                              style={{ background: '#16a372' }}
+                            >
+                              <DownloadIcon />
+                              Lihat Surat
+                            </button>
+                          )}
+                        </td>
+                      </tr>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-14 text-center text-[14px] text-[#6b7280]">
-                        Tidak ada permohonan yang ditemukan
-                      </td>
-                    </tr>
-                  ) : filtered.map(req => (
-                    <tr key={req.id} className="border-b border-[#e5e7eb] last:border-0 hover:bg-[#fafafa] transition-colors">
-                      <td className="px-4 py-4 text-[13px] text-[#1a1a1a] whitespace-nowrap" style={{ fontFamily: 'Menlo, monospace' }}>
-                        REQ-{req.id.slice(-6).toUpperCase()}
-                      </td>
-                      <td className="px-4 py-4 text-[13px] text-[#1a1a1a]">
-                        {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
-                      </td>
-                      <td className="px-4 py-4 text-[13px] text-[#6b7280] whitespace-nowrap">
-                        {formatDate(req.created_at)}
-                      </td>
-                      <td className="px-4 py-4"><StatusBadge status={req.status} /></td>
-                      <td className="px-4 py-4"><ProgressBar status={req.status} /></td>
-                      <td className="px-4 py-4">
-                        {req.status === 'completed' && (
-                          <button
-                            type="button"
-                            onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
-                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
-                            style={{ background: '#16a372' }}
-                          >
-                            <DownloadIcon />
-                            Lihat Surat
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden">
+                {filtered.length === 0 ? (
+                  <p className="px-4 py-14 text-center text-[14px] text-[#6b7280]">Tidak ada permohonan yang ditemukan</p>
+                ) : filtered.map(req => (
+                  <div key={req.id} className="px-4 py-4 border-b border-[#f3f4f6] last:border-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-[14px] text-[#1a1a1a] truncate">
+                          {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                        </p>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>
+                          REQ-{req.id.slice(-6).toUpperCase()}
+                        </p>
+                      </div>
+                      <StatusBadge status={req.status} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <ProgressBar status={req.status} />
+                        <p className="text-[12px] text-[#9ca3af] mt-1">{formatDate(req.created_at)}</p>
+                      </div>
+                      {req.status === 'completed' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
+                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white cursor-pointer border-0 shrink-0"
+                          style={{ background: '#16a372' }}
+                        >
+                          <DownloadIcon />
+                          Lihat Surat
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

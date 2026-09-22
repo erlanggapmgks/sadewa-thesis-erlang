@@ -95,14 +95,14 @@ export default function CitizensPage() {
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Data Warga</h1>
-            <p className="mt-2 text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Data Warga</h1>
+            <p className="mt-2 text-[14px] sm:text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
               Direktori seluruh warga yang terdaftar di sistem SADEWA
             </p>
           </div>
           {!loading && (
             <div
-              className="shrink-0 px-5 py-3 rounded-lg text-white"
+              className="hidden sm:block shrink-0 px-5 py-3 rounded-lg text-white"
               style={{ background: 'rgba(255,255,255,0.15)' }}
             >
               <p className="text-[28px] font-semibold leading-none">{citizens.length}</p>
@@ -143,73 +143,103 @@ export default function CitizensPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Warga</th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">NIK</th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Email</th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tgl. Daftar</th>
-                  <th className="px-6 py-3 text-center text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Permohonan</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <svg className="animate-spin w-6 h-6 text-[#1e5fb8] mx-auto" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                        <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
-                      </svg>
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-[14px] text-[#6b7280]">
-                      {search ? `Tidak ada warga yang cocok dengan "${search}"` : 'Belum ada warga terdaftar'}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((c, i) => {
-                    const initials = avatarInitials(c.full_name)
-                    const count    = reqCounts[c.id] ?? 0
-                    return (
-                      <tr key={c.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[13px] font-semibold text-white"
-                              style={{ background: `hsl(${(i * 47) % 360}, 55%, 55%)` }}
-                            >
-                              {initials}
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="px-6 py-12 text-center text-[14px] text-[#6b7280]">
+              {search ? `Tidak ada warga yang cocok dengan "${search}"` : 'Belum ada warga terdaftar'}
+            </p>
+          ) : (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Warga</th>
+                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">NIK</th>
+                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Email</th>
+                      <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tgl. Daftar</th>
+                      <th className="px-6 py-3 text-center text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Permohonan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((c, i) => {
+                      const initials = avatarInitials(c.full_name)
+                      const count    = reqCounts[c.id] ?? 0
+                      return (
+                        <tr key={c.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[13px] font-semibold text-white"
+                                style={{ background: `hsl(${(i * 47) % 360}, 55%, 55%)` }}
+                              >
+                                {initials}
+                              </div>
+                              <span className="font-medium text-[#1a1a1a]">{c.full_name ?? '—'}</span>
                             </div>
-                            <span className="font-medium text-[#1a1a1a]">{c.full_name ?? '—'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-[#6b7280]" style={{ fontFamily: 'Menlo, monospace', fontSize: '11px' }}>
-                          {maskNik(c.nik)}
-                        </td>
-                        <td className="px-6 py-4 text-[#6b7280]">{c.email ?? '—'}</td>
-                        <td className="px-6 py-4 text-[#6b7280]">{formatDate(c.created_at)}</td>
-                        <td className="px-6 py-4 text-center">
+                          </td>
+                          <td className="px-6 py-4 text-[#6b7280]" style={{ fontFamily: 'Menlo, monospace', fontSize: '11px' }}>
+                            {maskNik(c.nik)}
+                          </td>
+                          <td className="px-6 py-4 text-[#6b7280]">{c.email ?? '—'}</td>
+                          <td className="px-6 py-4 text-[#6b7280]">{formatDate(c.created_at)}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className="inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium"
+                              style={{
+                                background: count > 0 ? 'rgba(30,95,184,0.08)' : '#f3f4f6',
+                                color:      count > 0 ? '#1e5fb8' : '#9ca3af',
+                              }}
+                            >
+                              {count}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden divide-y divide-[#f3f4f6]">
+                {filtered.map((c, i) => {
+                  const initials = avatarInitials(c.full_name)
+                  const count    = reqCounts[c.id] ?? 0
+                  return (
+                    <div key={c.id} className="px-4 py-4 flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-[13px] font-semibold text-white"
+                        style={{ background: `hsl(${(i * 47) % 360}, 55%, 55%)` }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium text-[14px] text-[#1a1a1a] truncate">{c.full_name ?? '—'}</p>
                           <span
-                            className="inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium"
+                            className="inline-block px-2.5 py-0.5 rounded-full text-[12px] font-medium shrink-0"
                             style={{
                               background: count > 0 ? 'rgba(30,95,184,0.08)' : '#f3f4f6',
                               color:      count > 0 ? '#1e5fb8' : '#9ca3af',
                             }}
                           >
-                            {count}
+                            {count} req
                           </span>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                        <p className="text-[12px] text-[#6b7280] mt-0.5 truncate">{c.email ?? '—'}</p>
+                        <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>{maskNik(c.nik)}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
           {!loading && filtered.length > 0 && (
             <div className="px-6 py-3 border-t border-[#f3f4f6] text-[12px] text-[#9ca3af]">

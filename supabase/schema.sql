@@ -220,7 +220,35 @@ CREATE POLICY "kades_read_all_extracted" ON public.extracted_documents
 
 
 -- ────────────────────────────────────────────────────────────
--- 6. VILLAGE_SETTINGS — konfigurasi desa (TTD URL, dll.)
+-- 6. WALK-IN SUPPORT
+--    Admin bisa buat permohonan atas nama warga yang datang
+--    langsung ke kantor, tanpa perlu akun terdaftar.
+-- ────────────────────────────────────────────────────────────
+
+-- 6a. Jadikan user_id nullable (warga offline belum tentu punya akun)
+ALTER TABLE public.service_requests
+  ALTER COLUMN user_id DROP NOT NULL;
+
+-- 6b. Ganti ON DELETE CASCADE → SET NULL agar baris tidak ikut terhapus
+--     saat profil warga dihapus (request walk-in tetap tersimpan).
+ALTER TABLE public.service_requests
+  DROP CONSTRAINT IF EXISTS service_requests_user_id_fkey;
+ALTER TABLE public.service_requests
+  ADD CONSTRAINT service_requests_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+-- 6c. submitted_by — siapa admin yang menginput (audit trail walk-in)
+ALTER TABLE public.service_requests
+  ADD COLUMN IF NOT EXISTS submitted_by UUID REFERENCES public.profiles(id);
+
+-- 6d. RLS — izinkan admin INSERT request (sebelumnya hanya citizen)
+DROP POLICY IF EXISTS "admin_insert_request" ON public.service_requests;
+CREATE POLICY "admin_insert_request" ON public.service_requests
+  FOR INSERT WITH CHECK (public.get_my_role() = 'admin');
+
+
+-- ────────────────────────────────────────────────────────────
+-- 7. VILLAGE_SETTINGS — konfigurasi desa (TTD URL, dll.)
 -- ────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.village_settings (
@@ -249,7 +277,7 @@ INSERT INTO public.village_settings (key, value)
 
 
 -- ────────────────────────────────────────────────────────────
--- 7. FUNCTION: verify_letter — publik, bypass RLS
+-- 8. FUNCTION: verify_letter — publik, bypass RLS
 --    Dipakai halaman /verify/:id tanpa login
 -- ────────────────────────────────────────────────────────────
 
@@ -272,7 +300,7 @@ BEGIN
   )
   INTO result
   FROM public.service_requests sr
-  JOIN public.profiles p ON p.id = sr.user_id
+  LEFT JOIN public.profiles p ON p.id = sr.user_id
   WHERE sr.id = letter_id AND sr.status = 'completed';
 
   RETURN COALESCE(result, json_build_object('valid', false));
@@ -284,7 +312,7 @@ GRANT EXECUTE ON FUNCTION public.verify_letter(UUID) TO anon;
 
 
 -- ────────────────────────────────────────────────────────────
--- 8. SAFETY-NET: Auto-confirm email saat user mendaftar
+-- 9. SAFETY-NET: Auto-confirm email saat user mendaftar
 --    (Opsional — dijalankan jika "Confirm Email" belum dimatikan
 --     di Supabase Dashboard. Direkomendasikan untuk keperluan
 --     pengujian / sistem internal tanpa SMTP.)

@@ -35,7 +35,6 @@ const DEMO_REQUEST = {
   created_at: '2026-06-28T08:30:00Z',
   purpose: 'Untuk keperluan pengajuan keringanan biaya pengobatan di rumah sakit.',
   ktp_url: null,
-  kk_url: null,
   ai_reading_status: 'success',
   document_quality_status: 'good',
   completeness_status: 'complete',
@@ -152,36 +151,54 @@ function CompareRow({ label, profileValue, ocrValue, mono = false }) {
   const fontStyle = mono ? { fontFamily: 'Menlo, monospace', letterSpacing: 0 } : {}
 
   return (
-    <div className="grid grid-cols-[140px_1fr_1fr] gap-x-4 py-2.5 border-b border-[#f3f4f6] last:border-0 items-start">
-      <span className="text-[12px] text-[#6b7280] pt-0.5">{label}</span>
-      {/* Profile value (source of truth) */}
-      <span className="text-[13px] text-[#1a1a1a]" style={fontStyle}>
-        {profileValue || <span className="text-[#9ca3af]">—</span>}
-      </span>
-      {/* OCR value with match indicator */}
-      <div className="flex items-start gap-1.5">
-        <span
-          className="text-[13px]"
-          style={{
-            ...fontStyle,
-            color: missing ? '#9ca3af' : match === false ? '#dc2626' : match === true ? '#059669' : '#1a1a1a',
-          }}
-        >
-          {ocrValue || <span style={{ color: '#9ca3af' }}>—</span>}
+    <div className="py-2.5 border-b border-[#f3f4f6] last:border-0">
+      {/* Desktop: 3-column grid */}
+      <div className="hidden sm:grid sm:grid-cols-[140px_1fr_1fr] gap-x-4 items-start">
+        <span className="text-[12px] text-[#6b7280] pt-0.5">{label}</span>
+        <span className="text-[13px] text-[#1a1a1a]" style={fontStyle}>
+          {profileValue || <span className="text-[#9ca3af]">—</span>}
         </span>
-        {match === false && !missing && (
-          <span
-            className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
-            style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', marginTop: 1 }}
-          >
-            ≠ Beda
+        <div className="flex items-start gap-1.5">
+          <span className="text-[13px]"
+            style={{ ...fontStyle, color: missing ? '#9ca3af' : match === false ? '#dc2626' : match === true ? '#059669' : '#1a1a1a' }}>
+            {ocrValue || <span style={{ color: '#9ca3af' }}>—</span>}
           </span>
-        )}
-        {match === true && (
-          <span style={{ color: '#16a372', marginTop: 1 }}>
-            <CheckIcon size={13} />
-          </span>
-        )}
+          {match === false && !missing && (
+            <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', marginTop: 1 }}>
+              ≠ Beda
+            </span>
+          )}
+          {match === true && <span style={{ color: '#16a372', marginTop: 1 }}><CheckIcon size={13} /></span>}
+        </div>
+      </div>
+      {/* Mobile: stacked layout */}
+      <div className="sm:hidden">
+        <p className="text-[11px] text-[#6b7280] mb-1">{label}</p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] text-[#9ca3af] leading-4">Profil</p>
+            <p className="text-[13px] text-[#1a1a1a] mt-0.5" style={fontStyle}>
+              {profileValue || <span className="text-[#9ca3af]">—</span>}
+            </p>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] text-[#9ca3af] leading-4">OCR KTP</p>
+            <div className="flex items-start gap-1 mt-0.5">
+              <span className="text-[13px]"
+                style={{ ...fontStyle, color: missing ? '#9ca3af' : match === false ? '#dc2626' : match === true ? '#059669' : '#1a1a1a' }}>
+                {ocrValue || <span style={{ color: '#9ca3af' }}>—</span>}
+              </span>
+              {match === false && !missing && (
+                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626', marginTop: 1 }}>
+                  ≠
+                </span>
+              )}
+              {match === true && <span style={{ color: '#16a372', marginTop: 1 }}><CheckIcon size={12} /></span>}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -261,7 +278,7 @@ export default function RequestDetailPage() {
     <div>
       <section style={{ background: HERO_GRADIENT }} className="py-8">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Detail Permohonan</h1>
+          <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Detail Permohonan</h1>
           <p className="mt-2 text-[15px] leading-6" style={{ color: 'rgba(255,255,255,0.85)', fontFamily: 'Menlo, monospace' }}>
             REQ-{id.slice(-6).toUpperCase()}
           </p>
@@ -306,7 +323,7 @@ export default function RequestDetailPage() {
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.75"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>}
               title="Informasi Pemohon"
             >
-              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                 <InfoRow label="Nama Lengkap"     value={req.profiles?.full_name} />
                 <InfoRow label="NIK"               value={req.profiles?.nik} mono />
                 <InfoRow label="Email"             value={req.profiles?.email} />
@@ -336,10 +353,6 @@ export default function RequestDetailPage() {
                       <span className="text-[13px] text-[#6b7280]">KTP:</span>
                       <QualityBadge status={req.document_quality_status ?? 'good'} />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] text-[#6b7280]">KK:</span>
-                      <QualityBadge status={req.document_quality_status ?? 'good'} />
-                    </div>
                   </div>
                 </div>
 
@@ -358,8 +371,8 @@ export default function RequestDetailPage() {
                       Bandingkan data profil pendaftar dengan hasil baca OCR dari KTP yang diunggah.
                     </p>
 
-                    {/* Column headers */}
-                    <div className="grid grid-cols-[140px_1fr_1fr] gap-x-4 pb-2 border-b border-[#e5e7eb] mb-1">
+                    {/* Column headers - desktop only */}
+                    <div className="hidden sm:grid sm:grid-cols-[140px_1fr_1fr] gap-x-4 pb-2 border-b border-[#e5e7eb] mb-1">
                       <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Field</span>
                       <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Data Profil</span>
                       <span className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Hasil OCR KTP</span>
@@ -437,26 +450,16 @@ export default function RequestDetailPage() {
                 )}
 
                 {/* Document images */}
-                {(req.ktp_url || req.kk_url) && (
+                {req.ktp_url && (
                   <div>
                     <p className="text-[13px] font-medium text-[#1a1a1a] mb-3">Dokumen Diunggah</p>
                     <div className="flex gap-4">
-                      {req.ktp_url && (
-                        <div className="flex flex-col gap-1">
-                          <p className="text-[12px] text-[#6b7280]">KTP</p>
-                          <a href={req.ktp_url} target="_blank" rel="noreferrer">
-                            <img src={req.ktp_url} className="w-40 h-24 object-cover rounded-lg border border-[#e5e7eb] hover:opacity-90 transition-opacity" alt="KTP" />
-                          </a>
-                        </div>
-                      )}
-                      {req.kk_url && (
-                        <div className="flex flex-col gap-1">
-                          <p className="text-[12px] text-[#6b7280]">KK</p>
-                          <a href={req.kk_url} target="_blank" rel="noreferrer">
-                            <img src={req.kk_url} className="w-40 h-24 object-cover rounded-lg border border-[#e5e7eb] hover:opacity-90 transition-opacity" alt="KK" />
-                          </a>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        <p className="text-[12px] text-[#6b7280]">KTP</p>
+                        <a href={req.ktp_url} target="_blank" rel="noreferrer">
+                          <img src={req.ktp_url} className="w-40 h-24 object-cover rounded-lg border border-[#e5e7eb] hover:opacity-90 transition-opacity" alt="KTP" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}

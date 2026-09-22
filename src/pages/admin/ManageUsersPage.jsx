@@ -173,13 +173,13 @@ export default function ManageUsersPage() {
         <section style={{ background: HERO_GRADIENT }} className="py-8">
           <div className="max-w-[1280px] mx-auto px-4 flex items-center justify-between gap-4">
             <div>
-              <h1 className="font-medium text-[36px] text-white leading-10 tracking-[0.37px]">Kelola Pengguna</h1>
-              <p className="mt-2 text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
+              <h1 className="font-medium text-white leading-tight tracking-[0.37px]" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>Kelola Pengguna</h1>
+              <p className="mt-2 text-[14px] sm:text-[16px] leading-6" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 Manajemen akun dan peran seluruh pengguna sistem
               </p>
             </div>
             {!loading && (
-              <div className="shrink-0 flex gap-3">
+              <div className="hidden sm:flex shrink-0 gap-3">
                 <div className="px-4 py-3 rounded-lg text-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
                   <p className="text-[22px] font-semibold text-white leading-none">{totalCitizens}</p>
                   <p className="text-[11px] text-white/80 mt-0.5">Warga</p>
@@ -234,97 +234,131 @@ export default function ManageUsersPage() {
 
           {/* Table */}
           <div className="bg-white border border-[#e5e7eb] rounded-lg overflow-hidden" style={CARD_SHADOW}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
-                    <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Pengguna</th>
-                    <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Email</th>
-                    <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Peran</th>
-                    <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tgl. Daftar</th>
-                    <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
-                        <svg className="animate-spin w-6 h-6 text-[#1e5fb8] mx-auto" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-                          <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                      </td>
-                    </tr>
-                  ) : filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-[14px] text-[#6b7280]">
-                        Tidak ada pengguna yang cocok
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((u, i) => {
-                      const roleCfg    = ROLE_CFG[u.role] ?? ROLE_CFG.citizen
-                      const isSelf     = u.id === currentUser?.id
-                      const initials   = avatarInitials(u.full_name)
-
-                      return (
-                        <tr key={u.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[12px] font-semibold text-white"
-                                style={{ background: u.role === 'admin' ? '#059669' : `hsl(${(i * 53) % 360}, 50%, 52%)` }}
-                              >
-                                {initials}
+            {loading ? (
+              <div className="py-12 flex justify-center">
+                <svg className="animate-spin w-6 h-6 text-[#1e5fb8]" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="#1e5fb8" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              </div>
+            ) : filtered.length === 0 ? (
+              <p className="px-6 py-12 text-center text-[14px] text-[#6b7280]">Tidak ada pengguna yang cocok</p>
+            ) : (
+              <>
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                        <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Pengguna</th>
+                        <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Email</th>
+                        <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Peran</th>
+                        <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Tgl. Daftar</th>
+                        <th className="px-6 py-3 text-left text-[12px] font-medium text-[#6b7280] uppercase tracking-wide">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((u, i) => {
+                        const roleCfg  = ROLE_CFG[u.role] ?? ROLE_CFG.citizen
+                        const isSelf   = u.id === currentUser?.id
+                        const initials = avatarInitials(u.full_name)
+                        return (
+                          <tr key={u.id} className="border-b border-[#f3f4f6] hover:bg-[#fafafa] transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[12px] font-semibold text-white"
+                                  style={{ background: u.role === 'admin' ? '#059669' : `hsl(${(i * 53) % 360}, 50%, 52%)` }}
+                                >
+                                  {initials}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-[#1a1a1a]">{u.full_name ?? '—'}</p>
+                                  {isSelf && <p className="text-[11px] text-[#9ca3af]">Akun Anda</p>}
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium text-[#1a1a1a]">{u.full_name ?? '—'}</p>
-                                {isSelf && (
-                                  <p className="text-[11px] text-[#9ca3af]">Akun Anda</p>
-                                )}
-                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-[#6b7280]">{u.email ?? '—'}</td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-medium"
+                                style={{ background: roleCfg.bg, color: roleCfg.color }}>
+                                {u.role === 'admin' ? <ShieldIcon /> : <UserIcon />}
+                                {roleCfg.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-[#6b7280]">{formatDate(u.created_at)}</td>
+                            <td className="px-6 py-4">
+                              {isSelf ? (
+                                <span className="text-[12px] text-[#c8d0da]">—</span>
+                              ) : u.role === 'citizen' ? (
+                                <button onClick={() => requestRoleChange(u, 'admin')}
+                                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0 hover:opacity-90 transition-opacity"
+                                  style={{ background: 'rgba(22,163,114,0.1)', color: '#059669' }}>
+                                  <ShieldIcon /> Jadikan Admin
+                                </button>
+                              ) : (
+                                <button onClick={() => requestRoleChange(u, 'citizen')}
+                                  className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0 hover:opacity-90 transition-opacity"
+                                  style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
+                                  <UserIcon /> Jadikan Warga
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="md:hidden divide-y divide-[#f3f4f6]">
+                  {filtered.map((u, i) => {
+                    const roleCfg  = ROLE_CFG[u.role] ?? ROLE_CFG.citizen
+                    const isSelf   = u.id === currentUser?.id
+                    const initials = avatarInitials(u.full_name)
+                    return (
+                      <div key={u.id} className="px-4 py-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-[12px] font-semibold text-white"
+                            style={{ background: u.role === 'admin' ? '#059669' : `hsl(${(i * 53) % 360}, 50%, 52%)` }}
+                          >
+                            {initials}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-[14px] text-[#1a1a1a] truncate">{u.full_name ?? '—'}</p>
+                              {isSelf && <p className="text-[11px] text-[#9ca3af] shrink-0">Akun Anda</p>}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-[#6b7280]">{u.email ?? '—'}</td>
-                          <td className="px-6 py-4">
-                            <span
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-medium"
-                              style={{ background: roleCfg.bg, color: roleCfg.color }}
-                            >
-                              {u.role === 'admin' ? <ShieldIcon /> : <UserIcon />}
-                              {roleCfg.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-[#6b7280]">{formatDate(u.created_at)}</td>
-                          <td className="px-6 py-4">
-                            {isSelf ? (
-                              <span className="text-[12px] text-[#c8d0da]">—</span>
-                            ) : u.role === 'citizen' ? (
-                              <button
-                                onClick={() => requestRoleChange(u, 'admin')}
-                                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0 hover:opacity-90 transition-opacity"
-                                style={{ background: 'rgba(22,163,114,0.1)', color: '#059669' }}
-                              >
+                            <p className="text-[12px] text-[#6b7280] mt-0.5 truncate">{u.email ?? '—'}</p>
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-medium shrink-0"
+                            style={{ background: roleCfg.bg, color: roleCfg.color }}>
+                            {u.role === 'admin' ? <ShieldIcon /> : <UserIcon />}
+                            {roleCfg.label}
+                          </span>
+                        </div>
+                        {!isSelf && (
+                          <div className="flex justify-end">
+                            {u.role === 'citizen' ? (
+                              <button onClick={() => requestRoleChange(u, 'admin')}
+                                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0"
+                                style={{ background: 'rgba(22,163,114,0.1)', color: '#059669' }}>
                                 <ShieldIcon /> Jadikan Admin
                               </button>
                             ) : (
-                              <button
-                                onClick={() => requestRoleChange(u, 'citizen')}
-                                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0 hover:opacity-90 transition-opacity"
-                                style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}
-                              >
+                              <button onClick={() => requestRoleChange(u, 'citizen')}
+                                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium cursor-pointer border-0"
+                                style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
                                 <UserIcon /> Jadikan Warga
                               </button>
                             )}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
             {!loading && filtered.length > 0 && (
               <div className="px-6 py-3 border-t border-[#f3f4f6] text-[12px] text-[#9ca3af]">
                 Menampilkan {filtered.length} pengguna

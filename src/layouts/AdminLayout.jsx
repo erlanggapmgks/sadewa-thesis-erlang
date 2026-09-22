@@ -71,6 +71,14 @@ function UsersIcon() {
     </svg>
   )
 }
+function WalkInIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9.75L12 3l9 6.75V21a.75.75 0 0 1-.75.75H15v-6.75h-6V21.75H3.75A.75.75 0 0 1 3 21V9.75Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21.75V15h4.5v6.75" />
+    </svg>
+  )
+}
 function ReportIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -102,12 +110,13 @@ function CloseIcon() {
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',        Icon: DashboardIcon,  to: ROUTES.ADMIN_DASHBOARD },
-  { label: 'Kelola Pengajuan', Icon: DocumentIcon,   to: ROUTES.ADMIN_REQUESTS },
-  { label: 'Data Warga',       Icon: UsersGroupIcon, to: ROUTES.ADMIN_CITIZENS },
-  { label: 'Kelola Pengguna',  Icon: UsersIcon,      to: ROUTES.ADMIN_USERS },
-  { label: 'Laporan',          Icon: ReportIcon,     to: ROUTES.ADMIN_REPORTS },
-  { label: 'Pengaturan',       Icon: CogIcon,        to: ROUTES.ADMIN_SETTINGS },
+  { label: 'Dashboard',          Icon: DashboardIcon,  to: ROUTES.ADMIN_DASHBOARD },
+  { label: 'Kelola Pengajuan',   Icon: DocumentIcon,   to: ROUTES.ADMIN_REQUESTS },
+  { label: 'Pengajuan Langsung', Icon: WalkInIcon,     to: ROUTES.ADMIN_WALK_IN },
+  { label: 'Data Warga',         Icon: UsersGroupIcon, to: ROUTES.ADMIN_CITIZENS },
+  { label: 'Kelola Pengguna',    Icon: UsersIcon,      to: ROUTES.ADMIN_USERS },
+  { label: 'Laporan',            Icon: ReportIcon,     to: ROUTES.ADMIN_REPORTS },
+  { label: 'Pengaturan',         Icon: CogIcon,        to: ROUTES.ADMIN_SETTINGS },
 ]
 
 export default function AdminLayout() {
