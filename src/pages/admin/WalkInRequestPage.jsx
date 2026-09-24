@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthContext } from '../../context/AuthContext'
 import { ROUTES } from '../../routes/routes'
 import { supabase } from '../../services/supabase'
 import * as documentService from '../../services/documentService'
-import { ocrDocument } from '../../services/geminiService'
+import { ocrDocument, isOnline } from '../../services/geminiService'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,13 +47,14 @@ const ADDITIONAL_FIELDS = {
 
 const STEPS = ['Pilih Layanan', 'Scan KTP', 'Verifikasi AI', 'Konfirmasi']
 
-// ── AI processing ──────────────────────────────────────────────────────────────
+// ── AI processing — Gemini Flash (primary) → Tesseract (fallback offline) ────
 
 async function runAIProcessing(ktpFile) {
   const ocr = await ocrDocument(ktpFile)
   if (!ocr) return null
   const ktpQuality = ocr.quality === 'bad' ? 'bad' : ocr.quality === 'blurry' ? 'blurry' : 'good'
   return {
+    engine: ocr.engine ?? 'gemini',   // 'gemini' | 'tesseract'
     quality: { ktp: ktpQuality },
     completeness: {
       name:      !!ocr.nama,
@@ -62,10 +63,10 @@ async function runAIProcessing(ktpFile) {
       birthDate: !!ocr.tanggalLahir,
     },
     extracted: {
-      name:       ocr.nama        || '',
-      nik:        ocr.nik         || '',
-      address:    ocr.alamat      || '',
-      birthPlace: ocr.tempatLahir || '',
+      name:       ocr.nama         || '',
+      nik:        ocr.nik          || '',
+      address:    ocr.alamat       || '',
+      birthPlace: ocr.tempatLahir  || '',
       birthDate:  ocr.tanggalLahir || '',
     },
   }
@@ -277,23 +278,72 @@ function SummaryRow({ label, value, mono = false }) {
   )
 }
 
-const AI_STEPS = [
+// ── Engine badge ──────────────────────────────────────────────────────────────
+function EngineBadge({ engine }) {
+  const isOfflineEngine = engine === 'tesseract'
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-medium"
+      style={{
+        background: isOfflineEngine ? 'rgba(245,158,11,0.1)' : 'rgba(30,95,184,0.08)',
+        color:      isOfflineEngine ? '#b45309'               : '#1e5fb8',
+        border:     `1px solid ${isOfflineEngine ? 'rgba(245,158,11,0.25)' : 'rgba(30,95,184,0.15)'}`,
+      }}
+    >
+      {isOfflineEngine ? (
+        <>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+          </svg>
+          Offline · Tesseract OCR
+        </>
+      ) : (
+        <>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+          </svg>
+          Online · Gemini AI
+        </>
+      )}
+    </span>
+  )
+}
+
+const AI_STEPS_ONLINE  = [
   'Membaca kualitas dokumen...',
   'Mengekstrak data KTP...',
   'Memeriksa kelengkapan data...',
   'Menyelesaikan verifikasi AI...',
 ]
+const AI_STEPS_OFFLINE = [
+  'Memuat mesin Tesseract...',
+  'Memproses gambar KTP...',
+  'Mengekstrak teks dari KTP...',
+  'Menganalisis data yang ditemukan...',
+]
 
-function AIProcessingState({ progress }) {
+function AIProcessingState({ progress, offline = false }) {
+  const AI_STEPS = offline ? AI_STEPS_OFFLINE : AI_STEPS_ONLINE
   const activeStep = Math.min(Math.floor((progress / 100) * AI_STEPS.length), AI_STEPS.length - 1)
   return (
     <div className="flex flex-col items-center py-10 gap-8">
+      {offline && (
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium w-fit"
+          style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309', border: '1px solid rgba(245,158,11,0.25)' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+          </svg>
+          Mode Offline — Tesseract OCR
+        </div>
+      )}
       <div className="relative w-20 h-20">
         <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
           <circle cx="40" cy="40" r="34" fill="none" stroke="#e5e7eb" strokeWidth="6" />
           <circle
             cx="40" cy="40" r="34" fill="none"
-            stroke="#1e5fb8" strokeWidth="6"
+            stroke={offline ? '#d97706' : '#1e5fb8'} strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 34}`}
             strokeDashoffset={`${2 * Math.PI * 34 * (1 - progress / 100)}`}
@@ -301,7 +351,9 @@ function AIProcessingState({ progress }) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[14px] font-semibold text-[#1e5fb8]">{progress}%</span>
+          <span className="text-[14px] font-semibold" style={{ color: offline ? '#d97706' : '#1e5fb8' }}>
+            {progress}%
+          </span>
         </div>
       </div>
       <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -309,7 +361,7 @@ function AIProcessingState({ progress }) {
           <div key={s} className="flex items-center gap-3">
             <div
               className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors"
-              style={{ background: i < activeStep ? '#16a372' : i === activeStep ? '#1e5fb8' : '#e5e7eb' }}
+              style={{ background: i < activeStep ? '#16a372' : i === activeStep ? (offline ? '#d97706' : '#1e5fb8') : '#e5e7eb' }}
             >
               {i < activeStep ? <CheckIcon size={10} /> : i === activeStep ? <SpinnerIcon /> : null}
             </div>
@@ -358,6 +410,20 @@ export default function WalkInRequestPage() {
   const [submitted, setSubmitted]     = useState(false)
   const [requestId, setRequestId]     = useState(null)
   const [submitError, setSubmitError] = useState('')
+
+  // ── Online/offline status ─────────────────────────────────────────────────
+  const [isOffline, setIsOffline] = useState(false)
+  useEffect(() => {
+    isOnline().then(online => setIsOffline(!online))
+    const handleOffline = () => setIsOffline(true)
+    const handleOnline  = () => isOnline().then(online => setIsOffline(!online))
+    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline)
+    return () => {
+      window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -712,6 +778,25 @@ export default function WalkInRequestPage() {
                 </p>
               </div>
               <div className="p-6 flex flex-col gap-6">
+
+                {/* ── Offline banner ── */}
+                {isOffline && (
+                  <div
+                    className="flex items-start gap-3 p-4 rounded-lg"
+                    style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="shrink-0 mt-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+                    </svg>
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#b45309]">Mode Offline Aktif</p>
+                      <p className="text-[12px] text-[#92400e] mt-0.5 leading-5">
+                        Koneksi internet tidak terdeteksi. KTP akan diproses menggunakan <strong>Tesseract OCR</strong> (mesin lokal). Proses lebih lambat — pastikan foto KTP sangat jelas.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="max-w-md mx-auto w-full">
                   <UploadZone
                     label="Foto KTP Warga"
@@ -749,7 +834,7 @@ export default function WalkInRequestPage() {
                     onClick={goStep3}
                     className="flex items-center gap-2 h-10 px-6 bg-[#1e5fb8] text-white rounded-lg font-medium text-[14px] hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
                   >
-                    Proses dengan AI <ChevronRightIcon />
+                    {isOffline ? 'Proses Offline (Tesseract)' : 'Proses dengan AI'} <ChevronRightIcon />
                   </button>
                 </div>
               </div>
@@ -760,14 +845,23 @@ export default function WalkInRequestPage() {
           {step === 3 && (
             <div className="bg-white border border-[#e5e7eb] rounded-xl" style={CARD_SHADOW}>
               <div className="px-6 pt-6 pb-4 border-b border-[#e5e7eb]">
-                <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Verifikasi AI</h2>
-                <p className="mt-1 text-[14px] text-[#6b7280]">
-                  {aiLoading ? 'Sistem AI sedang membaca KTP warga...' : 'Periksa data hasil baca AI dan status warga'}
-                </p>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h2 className="font-semibold text-[18px] text-[#1a1a1a]">Verifikasi AI</h2>
+                    <p className="mt-1 text-[14px] text-[#6b7280]">
+                      {aiLoading
+                        ? (isOffline ? 'Tesseract OCR sedang membaca KTP warga (mode offline)...' : 'Sistem AI sedang membaca KTP warga...')
+                        : 'Periksa data hasil baca AI dan status warga'}
+                    </p>
+                  </div>
+                  {!aiLoading && aiResult && (
+                    <EngineBadge engine={aiResult.engine} />
+                  )}
+                </div>
               </div>
               <div className="p-6">
                 {aiLoading ? (
-                  <AIProcessingState progress={aiProgress} />
+                  <AIProcessingState progress={aiProgress} offline={isOffline} />
                 ) : aiResult ? (
                   <div className="flex flex-col gap-6">
                     {/* Kualitas dokumen */}

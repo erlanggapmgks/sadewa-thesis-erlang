@@ -465,15 +465,18 @@ async function preprocessForOCR(file) {
 }
 
 async function ocrWithTesseract(file) {
-  console.log('[SADEWA OCR] Starting Tesseract...')
+  console.log('[SADEWA OCR] Starting Tesseract (offline engine)...')
   const processed = await preprocessForOCR(file)
   const url = URL.createObjectURL(processed)
   try {
+    // Use locally bundled assets — zero network requests needed for offline support.
+    // Files are served from /public/tesseract/ and /public/tesseract/lang/.
+    const base = import.meta.env.BASE_URL ?? '/'
     const worker = await createWorker('ind+eng', 1, {
-      logger: m => { if (m.status === 'recognizing text') console.log('[SADEWA OCR] Progress:', Math.round(m.progress * 100) + '%') },
-      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/worker.min.js',
-      langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core-lstm.wasm.js',
+      logger: m => { if (m.status === 'recognizing text') console.log('[SADEWA OCR] Tesseract progress:', Math.round(m.progress * 100) + '%') },
+      workerPath: `${base}tesseract/worker.min.js`,
+      langPath:   `${base}tesseract/lang`,
+      corePath:   `${base}tesseract/tesseract-core-lstm.wasm.js`,
     })
     const { data: { text } } = await worker.recognize(url)
     await worker.terminate()
@@ -656,29 +659,60 @@ async function ocrWithGemini(file) {
   }
 }
 
+// ── Online/offline detection ──────────────────────────────────────────────────
+// navigator.onLine is a fast hint. For a real connectivity check we also do a
+// lightweight HEAD probe against the Gemini endpoint domain so that a captive-
+// portal or DNS failure is caught before we try to call Gemini.
+async function isOnline() {
+  if (!navigator.onLine) return false
+  try {
+    // Probe with a tiny no-CORS request; if it resolves we have real internet.
+    await fetch('https://generativelanguage.googleapis.com', {
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000),
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 // ── Public OCR entry point ────────────────────────────────────────────────────
-// Strategy: Gemini Flash (primary, requires internet) → Tesseract.js (offline fallback) → null
+// Strategy:
+//   Online  → Gemini Flash (primary)  — fast, high accuracy, requires internet
+//   Offline → Tesseract.js (fallback) — fully local, no internet needed
+//
+// Returns the OCR result object with an added `engine` field:
+//   { engine: 'gemini' | 'tesseract', quality, nama, nik, tempatLahir, tanggalLahir, alamat }
 
 export async function ocrDocument(file) {
-  // 1. Gemini Flash — primary engine, requires internet + API key.
-  //    Accept the result as long as quality is not 'bad'. Do NOT gate on nama being
-  //    present: real KTPs with hologram/guilloche can cause Gemini to miss the name
-  //    while still reading NIK, date, and address correctly. Falling back to Tesseract
-  //    in that case makes everything worse — guilloché fools Tesseract far more than Gemini.
-  if (API_KEY && API_KEY !== 'your-gemini-api-key-here') {
+  const online = await isOnline()
+  const hasKey = API_KEY && API_KEY !== 'your-gemini-api-key-here'
+
+  // 1. Gemini Flash — only when we have connectivity AND an API key.
+  if (online && hasKey) {
     const geminiResult = await ocrWithGemini(file)
     if (geminiResult && geminiResult.quality !== 'bad') {
-      console.log('[SADEWA OCR] Using Gemini result — quality:', geminiResult.quality)
-      return geminiResult
+      console.log('[SADEWA OCR] Engine: Gemini — quality:', geminiResult.quality)
+      return { ...geminiResult, engine: 'gemini' }
     }
     if (geminiResult?.quality === 'bad') {
-      console.log('[SADEWA OCR] Gemini returned bad quality, falling back to Tesseract')
+      console.log('[SADEWA OCR] Gemini quality=bad → falling back to Tesseract')
     } else {
-      console.log('[SADEWA OCR] Gemini unavailable, falling back to Tesseract')
+      console.log('[SADEWA OCR] Gemini call failed → falling back to Tesseract')
     }
+  } else {
+    console.log(`[SADEWA OCR] Offline mode — skipping Gemini (online:${online}, hasKey:${hasKey})`)
   }
 
-  // 2. Tesseract.js — offline fallback, no internet needed.
-  return ocrWithTesseract(file)
+  // 2. Tesseract.js — offline fallback, all assets served locally.
+  const tessResult = await ocrWithTesseract(file)
+  if (tessResult) return { ...tessResult, engine: 'tesseract' }
+  return null
 }
+
+// ── Utility: check current connectivity (used by UI to show offline banner) ──
+export { isOnline }
 
