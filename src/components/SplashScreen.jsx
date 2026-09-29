@@ -1,11 +1,19 @@
-// Intro screen shown on first load AND every browser refresh.
-// Logic:
-//   - On module load, check sessionStorage for the key.
-//   - If absent → show splash, set the key.
-//   - Register a `beforeunload` listener to DELETE the key so the next
-//     page load (refresh / new tab / close+reopen) shows splash again.
-//   - SPA navigations never trigger `beforeunload`, so the key stays and
-//     splash is NOT shown when navigating between routes.
+// Intro screen shown ONLY on:
+//   1. First ever load of the app (fresh tab / direct URL open)
+//   2. Hard refresh (F5 / Cmd+R / browser reload button)
+//
+// SPA navigations between routes NEVER trigger this screen.
+//
+// Detection strategy:
+//   - Check performance.getEntriesByType('navigation')[0].type
+//     'navigate' = fresh load from outside (first open)
+//     'reload'   = browser refresh
+//     'back_forward' / 'prerender' = skip splash
+//   - Additionally guard with sessionStorage so the very first
+//     'navigate' only shows once; subsequent 'navigate' entries
+//     that come from SPA link clicks are filtered out because
+//     SPA navigations don't produce a new navigation entry at all
+//     (the JS module is never re-evaluated).
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -18,19 +26,36 @@ const HOLD_DURATION     = 1200
 const FADE_OUT_DURATION = 500
 
 /**
- * Call once at module load.
- * Returns true if splash should show, and registers a beforeunload handler
- * that clears the key so refreshes always show splash again.
+ * Returns true if the splash screen should be shown.
+ * Called once at module load (App.jsx constant), so it runs exactly once
+ * per page evaluation — which only happens on first open or refresh,
+ * never on SPA route changes.
  */
 export function shouldShowSplash() {
-  // Register beforeunload so refresh/close always clears the flag
-  window.addEventListener('beforeunload', () => {
-    sessionStorage.removeItem(SESSION_KEY)
-  })
+  try {
+    const [entry] = performance.getEntriesByType('navigation')
+    const navType = entry?.type // 'navigate' | 'reload' | 'back_forward' | 'prerender'
 
-  if (sessionStorage.getItem(SESSION_KEY)) return false
-  sessionStorage.setItem(SESSION_KEY, '1')
-  return true
+    if (navType === 'reload') {
+      // Always show on refresh
+      return true
+    }
+
+    if (navType === 'navigate') {
+      // First open — show only once per session
+      if (sessionStorage.getItem(SESSION_KEY)) return false
+      sessionStorage.setItem(SESSION_KEY, '1')
+      return true
+    }
+
+    // back_forward, prerender, or unknown — skip splash
+    return false
+  } catch {
+    // Fallback for browsers without Navigation Timing API
+    if (sessionStorage.getItem(SESSION_KEY)) return false
+    sessionStorage.setItem(SESSION_KEY, '1')
+    return true
+  }
 }
 
 export default function SplashScreen({ onExited }) {
@@ -71,15 +96,6 @@ export default function SplashScreen({ onExited }) {
       aria-live="polite"
       aria-label="Memuat SADEWA..."
     >
-      {/*
-        Responsive logo size:
-          mobile  (< 640px)  : 200px
-          tablet  (640–1023px): 280px
-          desktop (≥ 1024px) : 400px
-        Implemented via a CSS custom property set by a <style> block so we
-        can use plain inline styles without Tailwind (avoids JIT purge issues
-        for dynamic values).
-      */}
       <style>{`
         .splash-logo {
           width: 200px;
