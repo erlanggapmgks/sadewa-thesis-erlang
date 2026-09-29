@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
+import FadeUp from '../components/FadeUp'
 import { NEWS_ITEMS } from '../data/newsData'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
@@ -88,15 +89,17 @@ export default function BeritaPage() {
         {/* Hero */}
         <section style={{ background: HERO_GRADIENT }} className="py-16">
           <div className="max-w-[1280px] mx-auto px-4">
-            <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
-              Berita Desa
-            </h1>
-            <p
-              className="mt-4 text-[20px] leading-7 tracking-[-0.45px] max-w-[672px]"
-              style={{ color: 'rgba(255,255,255,0.9)' }}
-            >
-              Tetap terinformasi dengan perkembangan dan kegiatan terbaru di Desa Wates
-            </p>
+            <FadeUp threshold={0}>
+              <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
+                Berita Desa
+              </h1>
+              <p
+                className="mt-4 text-[20px] leading-7 tracking-[-0.45px] max-w-[672px]"
+                style={{ color: 'rgba(255,255,255,0.9)' }}
+              >
+                Tetap terinformasi dengan perkembangan dan kegiatan terbaru di Desa Wates
+              </p>
+            </FadeUp>
           </div>
         </section>
 
@@ -104,39 +107,45 @@ export default function BeritaPage() {
         <div className="max-w-[1280px] mx-auto px-4 pb-16">
 
           {/* Search card */}
-          <div
-            className="bg-white border border-[#e5e7eb] p-px"
-            style={{
-              marginTop: '64px',
-              marginBottom: '64px',
-              borderRadius: '8px',
-              boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)',
-            }}
-          >
-            <div className="p-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari berita..."
-                className="w-full h-[42px] bg-white border border-[#e5e7eb] text-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.5)] tracking-[-0.31px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
-                style={{ borderRadius: '8px', padding: '8px' }}
-              />
+          <FadeUp>
+            <div
+              className="bg-white border border-[#e5e7eb] p-px"
+              style={{
+                marginTop: '64px',
+                marginBottom: '64px',
+                borderRadius: '8px',
+                boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)',
+              }}
+            >
+              <div className="p-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari berita..."
+                  className="w-full h-[42px] bg-white border border-[#e5e7eb] text-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.5)] tracking-[-0.31px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent"
+                  style={{ borderRadius: '8px', padding: '8px' }}
+                />
+              </div>
             </div>
-          </div>
+          </FadeUp>
 
           {filtered.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((item) => (
-                <NewsCard key={item.id} {...item} />
+              {filtered.map((item, i) => (
+                <FadeUp key={item.id} delay={i * 80}>
+                  <NewsCard {...item} />
+                </FadeUp>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-[#6b7280] text-base">
-                Tidak ada berita yang cocok dengan "<strong>{searchQuery}</strong>".
-              </p>
-            </div>
+            <FadeUp>
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <p className="text-[#6b7280] text-base">
+                  Tidak ada berita yang cocok dengan "<strong>{searchQuery}</strong>".
+                </p>
+              </div>
+            </FadeUp>
           )}
         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
+import FadeUp from '../components/FadeUp'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -179,15 +180,17 @@ export default function ContactPage() {
         {/* Hero */}
         <section style={{ background: HERO_GRADIENT }} className="py-16">
           <div className="max-w-[1280px] mx-auto px-4">
-            <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
-              Hubungi Kami
-            </h1>
-            <p
-              className="mt-4 text-[20px] leading-7 tracking-[-0.45px] max-w-[640px]"
-              style={{ color: 'rgba(255,255,255,0.9)' }}
-            >
-              Sampaikan pertanyaan atau keluhan Anda. Kami siap membantu.
-            </p>
+            <FadeUp threshold={0}>
+              <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
+                Hubungi Kami
+              </h1>
+              <p
+                className="mt-4 text-[20px] leading-7 tracking-[-0.45px] max-w-[640px]"
+                style={{ color: 'rgba(255,255,255,0.9)' }}
+              >
+                Sampaikan pertanyaan atau keluhan Anda. Kami siap membantu.
+              </p>
+            </FadeUp>
           </div>
         </section>
 
@@ -195,8 +198,10 @@ export default function ContactPage() {
         <div className="relative z-10 -mt-12">
           <div className="max-w-[1280px] mx-auto px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {CONTACT_INFO.map((card) => (
-                <InfoCard key={card.title} {...card} />
+              {CONTACT_INFO.map((card, i) => (
+                <FadeUp key={card.title} delay={i * 80}>
+                  <InfoCard {...card} />
+                </FadeUp>
               ))}
             </div>
           </div>
@@ -207,129 +212,135 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Left — contact form */}
-            <CardShell title="Kirim Pesan">
-              {submitted ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-                  <CheckCircleIcon />
-                  <p className="font-medium text-[18px] text-[#1a1a1a]">Pesan Terkirim!</p>
-                  <p className="text-sm text-[#6b7280] max-w-[320px] leading-5">
-                    Terima kasih telah menghubungi kami. Tim kami akan merespons dalam 1–2 hari kerja.
-                  </p>
-                  <button
-                    onClick={() => { setSubmitted(false); setForm({ nama: '', email: '', subjek: '', pesan: '' }) }}
-                    className="mt-2 text-sm text-[#1e5fb8] hover:underline"
-                  >
-                    Kirim pesan lain
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <FormField label="Nama Lengkap">
-                    <input
-                      type="text"
-                      name="nama"
-                      value={form.nama}
-                      onChange={handleChange}
-                      placeholder="Masukkan nama Anda"
-                      className={inputClass}
-                      required
-                    />
-                  </FormField>
+            <FadeUp>
+              <CardShell title="Kirim Pesan">
+                {submitted ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
+                    <CheckCircleIcon />
+                    <p className="font-medium text-[18px] text-[#1a1a1a]">Pesan Terkirim!</p>
+                    <p className="text-sm text-[#6b7280] max-w-[320px] leading-5">
+                      Terima kasih telah menghubungi kami. Tim kami akan merespons dalam 1–2 hari kerja.
+                    </p>
+                    <button
+                      onClick={() => { setSubmitted(false); setForm({ nama: '', email: '', subjek: '', pesan: '' }) }}
+                      className="mt-2 text-sm text-[#1e5fb8] hover:underline"
+                    >
+                      Kirim pesan lain
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <FormField label="Nama Lengkap">
+                      <input
+                        type="text"
+                        name="nama"
+                        value={form.nama}
+                        onChange={handleChange}
+                        placeholder="Masukkan nama Anda"
+                        className={inputClass}
+                        required
+                      />
+                    </FormField>
 
-                  <FormField label="Alamat Email">
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="email.anda@contoh.com"
-                      className={inputClass}
-                      required
-                    />
-                  </FormField>
+                    <FormField label="Alamat Email">
+                      <input
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="email.anda@contoh.com"
+                        className={inputClass}
+                        required
+                      />
+                    </FormField>
 
-                  <FormField label="Subjek">
-                    <input
-                      type="text"
-                      name="subjek"
-                      value={form.subjek}
-                      onChange={handleChange}
-                      placeholder="Perihal pesan Anda"
-                      className={inputClass}
-                      required
-                    />
-                  </FormField>
+                    <FormField label="Subjek">
+                      <input
+                        type="text"
+                        name="subjek"
+                        value={form.subjek}
+                        onChange={handleChange}
+                        placeholder="Perihal pesan Anda"
+                        className={inputClass}
+                        required
+                      />
+                    </FormField>
 
-                  <FormField label="Pesan">
-                    <textarea
-                      name="pesan"
-                      value={form.pesan}
-                      onChange={handleChange}
-                      placeholder="Tulis pesan Anda di sini..."
-                      rows={6}
-                      className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] py-[9px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent resize-none"
-                      style={{ minHeight: '128px' }}
-                      required
-                    />
-                  </FormField>
+                    <FormField label="Pesan">
+                      <textarea
+                        name="pesan"
+                        value={form.pesan}
+                        onChange={handleChange}
+                        placeholder="Tulis pesan Anda di sini..."
+                        rows={6}
+                        className="w-full bg-[#f9fafb] border border-[#e5e7eb] rounded-[6px] px-[13px] py-[9px] text-[14px] text-[#1a1a1a] placeholder-[#6b7280] tracking-[-0.15px] focus:outline-none focus:ring-2 focus:ring-[#1e5fb8] focus:border-transparent resize-none"
+                        style={{ minHeight: '128px' }}
+                        required
+                      />
+                    </FormField>
 
-                  <button
-                    type="submit"
-                    className="w-full h-11 bg-[#1e5fb8] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] flex items-center justify-center gap-2 hover:bg-[#1e3a8a] transition-colors mt-2 cursor-pointer"
-                  >
-                    <SendIcon />
-                    Kirim Pesan
-                  </button>
-                </form>
-              )}
-            </CardShell>
+                    <button
+                      type="submit"
+                      className="w-full h-11 bg-[#1e5fb8] rounded-lg text-white font-medium text-[16px] leading-6 tracking-[-0.31px] flex items-center justify-center gap-2 hover:bg-[#1e3a8a] transition-colors mt-2 cursor-pointer"
+                    >
+                      <SendIcon />
+                      Kirim Pesan
+                    </button>
+                  </form>
+                )}
+              </CardShell>
+            </FadeUp>
 
             {/* Right — map + FAQ */}
             <div className="flex flex-col gap-6">
 
               {/* Map card */}
-              <CardShell title="Peta Lokasi">
-                <div className="rounded-lg overflow-hidden bg-[#f3f4f6]" style={{ height: '314px' }}>
-                  <iframe
-                    src={MAPS_EMBED}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Peta Kantor Desa Wates"
-                  />
-                </div>
-                <p className="mt-4 text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
-                  Kantor Desa Wates berlokasi di Wates, Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64482. Mudah dijangkau dengan transportasi umum.
-                </p>
-                <a
-                  href={MAPS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#1e5fb8] no-underline hover:underline"
-                >
-                  Buka di Google Maps
-                  <ExternalLinkIcon />
-                </a>
-              </CardShell>
+              <FadeUp delay={100}>
+                <CardShell title="Peta Lokasi">
+                  <div className="rounded-lg overflow-hidden bg-[#f3f4f6]" style={{ height: '314px' }}>
+                    <iframe
+                      src={MAPS_EMBED}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Peta Kantor Desa Wates"
+                    />
+                  </div>
+                  <p className="mt-4 text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
+                    Kantor Desa Wates berlokasi di Wates, Kec. Nganjuk, Kabupaten Nganjuk, Jawa Timur 64482. Mudah dijangkau dengan transportasi umum.
+                  </p>
+                  <a
+                    href={MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#1e5fb8] no-underline hover:underline"
+                  >
+                    Buka di Google Maps
+                    <ExternalLinkIcon />
+                  </a>
+                </CardShell>
+              </FadeUp>
 
               {/* FAQ card */}
-              <CardShell title="Pertanyaan yang Sering Diajukan">
-                <div className="flex flex-col gap-4">
-                  {FAQS.map((faq, i) => (
-                    <div key={i} className={i > 0 ? 'pt-4 border-t border-[#f3f4f6]' : ''}>
-                      <p className="font-medium text-[16px] text-[#1a1a1a] leading-6 tracking-[-0.31px]">
-                        {faq.q}
-                      </p>
-                      <p className="mt-1 text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
-                        {faq.a}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardShell>
+              <FadeUp delay={200}>
+                <CardShell title="Pertanyaan yang Sering Diajukan">
+                  <div className="flex flex-col gap-4">
+                    {FAQS.map((faq, i) => (
+                      <div key={i} className={i > 0 ? 'pt-4 border-t border-[#f3f4f6]' : ''}>
+                        <p className="font-medium text-[16px] text-[#1a1a1a] leading-6 tracking-[-0.31px]">
+                          {faq.q}
+                        </p>
+                        <p className="mt-1 text-[14px] text-[#6b7280] leading-5 tracking-[-0.15px]">
+                          {faq.a}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardShell>
+              </FadeUp>
 
             </div>
           </div>

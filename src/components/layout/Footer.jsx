@@ -73,8 +73,12 @@ function InstagramIcon() {
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const QUICK_LINKS = ['Beranda', 'Profil Desa', 'Berita', 'Kontak']
-const SERVICE_LINKS = ['Portal Warga', 'Permohonan Baru', 'Lacak Permohonan', 'Verifikasi QR']
+const QUICK_LINKS = [
+  { label: 'Beranda',     to: ROUTES.HOME },
+  { label: 'Profil Desa', to: ROUTES.VILLAGE_PROFILE },
+  { label: 'Berita',      to: ROUTES.NEWS },
+  { label: 'Kontak',      to: ROUTES.CONTACT },
+]
 
 const CONTACT_ITEMS = [
   { icon: <MapPinIcon />, text: 'Desa Wates, Kec. Tanjunganom, Kab. Nganjuk, Jawa Timur' },
@@ -100,8 +104,8 @@ export default function Footer() {
     >
       <div className="max-w-[1280px] mx-auto px-4 py-12">
 
-        {/* 4-column grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        {/* 3-column grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
 
           {/* Col 1: Brand */}
           <div>
@@ -120,26 +124,10 @@ export default function Footer() {
             </h4>
             <ul className="flex flex-col gap-2 list-none p-0 m-0">
               {QUICK_LINKS.map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm text-[#6b7280] no-underline hover:text-[#1a1a1a] transition-colors">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Col 3: Layanan */}
-          <nav aria-label="Layanan">
-            <h4 className="font-medium text-base text-[#1a1a1a] tracking-[-0.31px] mb-4">
-              Layanan
-            </h4>
-            <ul className="flex flex-col gap-2 list-none p-0 m-0">
-              {SERVICE_LINKS.map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm text-[#6b7280] no-underline hover:text-[#1a1a1a] transition-colors">
-                    {link}
-                  </a>
+                <li key={link.label}>
+                  <Link to={link.to} className="text-sm text-[#6b7280] no-underline hover:text-[#1a1a1a] transition-colors">
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>

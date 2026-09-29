@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routes'
 import { useAuthContext } from '../../context/AuthContext'
+import FadeUp from '../FadeUp'
 
 function ArrowRightIcon() {
   return (
@@ -127,7 +128,7 @@ export default function ServicesSection() {
       <div className="max-w-[1280px] mx-auto px-4">
 
         {/* Section header */}
-        <div className="text-center mb-12">
+        <FadeUp className="text-center mb-12">
           <span
             className="inline-block px-3 py-1 rounded-full text-[13px] font-medium mb-4"
             style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706' }}
@@ -140,12 +141,14 @@ export default function ServicesSection() {
           <p className="mt-4 text-[15px] sm:text-[18px] text-[#6b7280] leading-7 max-w-[600px] mx-auto">
             Ajukan berbagai dokumen administrasi secara online dengan proses yang cepat dan terverifikasi AI
           </p>
-        </div>
+        </FadeUp>
 
-        {/* 3×2 grid */}
+        {/* 3×2 grid — cards staggered */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SERVICES.map(({ key, ...rest }) => (
-            <ServiceCard key={key} {...rest} />
+          {SERVICES.map(({ key, ...rest }, i) => (
+            <FadeUp key={key} delay={i * 80}>
+              <ServiceCard {...rest} />
+            </FadeUp>
           ))}
         </div>
       </div>

@@ -1,3 +1,5 @@
+import FadeUp from '../FadeUp'
+
 const FEATURES = [
   {
     title: 'OCR Dokumen Otomatis',
@@ -51,7 +53,7 @@ export default function FeaturesSection() {
       <div className="max-w-[1280px] mx-auto px-4">
 
         {/* Header */}
-        <div className="text-center mb-14">
+        <FadeUp className="text-center mb-14">
           <span
             className="inline-block px-3 py-1 rounded-full text-[13px] font-medium mb-4"
             style={{ background: 'rgba(22,163,114,0.08)', color: '#059669' }}
@@ -65,37 +67,31 @@ export default function FeaturesSection() {
             SADEWA menggunakan AI untuk membaca, memvalidasi, dan mengisi data dokumen
             secara otomatis sehingga proses administrasi lebih cepat dan akurat
           </p>
-        </div>
+        </FadeUp>
 
-        {/* Feature grid */}
+        {/* Feature grid — staggered */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[900px] mx-auto">
-          {FEATURES.map((f) => (
-            <article
-              key={f.title}
-              className="border border-[#e5e7eb] rounded-xl p-6 hover:border-transparent transition-all duration-200 group"
-              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.boxShadow = `0 4px 20px ${f.color}20`
-                e.currentTarget.style.borderColor = `${f.color}30`
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'
-                e.currentTarget.style.borderColor = '#e5e7eb'
-              }}
-            >
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                style={{ background: f.bg }}
+          {FEATURES.map((f, i) => (
+            <FadeUp key={f.title} delay={i * 100}>
+              <article
+                className="border border-[#e5e7eb] rounded-xl p-6 h-full hover:border-transparent transition-all duration-200"
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = `0 4px 20px ${f.color}20`
+                  e.currentTarget.style.borderColor = `${f.color}30`
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'
+                  e.currentTarget.style.borderColor = '#e5e7eb'
+                }}
               >
-                {f.icon}
-              </div>
-              <h3 className="font-semibold text-[16px] text-[#1a1a1a] leading-6 mb-2">
-                {f.title}
-              </h3>
-              <p className="text-[14px] text-[#6b7280] leading-6">
-                {f.description}
-              </p>
-            </article>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: f.bg }}>
+                  {f.icon}
+                </div>
+                <h3 className="font-semibold text-[16px] text-[#1a1a1a] leading-6 mb-2">{f.title}</h3>
+                <p className="text-[14px] text-[#6b7280] leading-6">{f.description}</p>
+              </article>
+            </FadeUp>
           ))}
         </div>
       </div>

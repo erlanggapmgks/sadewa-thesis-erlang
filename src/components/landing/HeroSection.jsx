@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routes'
+import FadeUp from '../FadeUp'
 
 function ShieldCheckIcon() {
   return (
@@ -21,10 +22,7 @@ export default function HeroSection() {
   return (
     <section
       className="relative overflow-hidden"
-      style={{
-        background: '#1e5fb8',
-        minHeight: '492px',
-      }}
+      style={{ background: '#1e5fb8', minHeight: '492px' }}
       id="beranda"
       aria-label="Hero section"
     >
@@ -40,44 +38,51 @@ export default function HeroSection() {
         <div className="max-w-[768px]">
 
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-4"
-            style={{ background: 'rgba(255,255,255,0.1)' }}>
-            <ShieldCheckIcon />
-            <span className="text-white text-sm leading-5">Layanan Pemerintah Terpercaya</span>
-          </div>
+          <FadeUp threshold={0} delay={0}>
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-4"
+              style={{ background: 'rgba(255,255,255,0.1)' }}>
+              <ShieldCheckIcon />
+              <span className="text-white text-sm leading-5">Layanan Pemerintah Terpercaya</span>
+            </div>
+          </FadeUp>
 
           {/* Heading */}
-          <h1
-            className="text-white font-medium leading-[1.2] mt-2 mb-6 whitespace-pre-line"
-            style={{ fontSize: 'clamp(36px, 5vw, 60px)', letterSpacing: '0.26px' }}
-          >
-            Sistem Administrasi{'\n'}Desa Wates
-          </h1>
+          <FadeUp threshold={0} delay={100}>
+            <h1
+              className="text-white font-medium leading-[1.2] mt-2 mb-6 whitespace-pre-line"
+              style={{ fontSize: 'clamp(36px, 5vw, 60px)', letterSpacing: '0.26px' }}
+            >
+              Sistem Administrasi{'\n'}Desa Wates
+            </h1>
+          </FadeUp>
 
           {/* Description */}
-          <p
-            className="font-normal leading-7 mb-8 max-w-[600px]"
-            style={{ fontSize: '20px', color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.45px' }}
-          >
-            Ajukan dan pantau dokumen administrasi desa secara online, kapan saja dan di mana saja.
-          </p>
+          <FadeUp threshold={0} delay={200}>
+            <p
+              className="font-normal leading-7 mb-8 max-w-[600px]"
+              style={{ fontSize: '20px', color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.45px' }}
+            >
+              Ajukan dan pantau dokumen administrasi desa secara online, kapan saja dan di mana saja.
+            </p>
+          </FadeUp>
 
           {/* CTA buttons */}
-          <div className="flex flex-wrap gap-4">
-            <Link to={ROUTES.LOGIN}>
-              <button className="inline-flex items-center gap-2 bg-white text-[#1e5fb8] font-medium text-base px-6 rounded-lg h-11 hover:bg-blue-50 transition-colors cursor-pointer">
-                Mulai Sekarang
-                <ArrowRightIcon />
-              </button>
-            </Link>
-            <a href="#layanan">
-              <button
-                className="inline-flex items-center bg-white border border-white text-[#0a0a0a] font-medium text-base px-6 rounded-lg h-11 hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Lihat Layanan
-              </button>
-            </a>
-          </div>
+          <FadeUp threshold={0} delay={300}>
+            <div className="flex flex-wrap gap-4">
+              <Link to={ROUTES.LOGIN}>
+                <button className="inline-flex items-center gap-2 bg-white text-[#1e5fb8] font-medium text-base px-6 rounded-lg h-11 hover:bg-blue-50 transition-colors cursor-pointer">
+                  Mulai Sekarang
+                  <ArrowRightIcon />
+                </button>
+              </Link>
+              <a href="#layanan">
+                <button className="inline-flex items-center bg-white border border-white text-[#0a0a0a] font-medium text-base px-6 rounded-lg h-11 hover:bg-gray-50 transition-colors cursor-pointer">
+                  Lihat Layanan
+                </button>
+              </a>
+            </div>
+          </FadeUp>
+
         </div>
       </div>
     </section>

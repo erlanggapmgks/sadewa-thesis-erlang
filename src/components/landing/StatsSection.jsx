@@ -1,4 +1,10 @@
 // 4 summary stat cards that float on top of the Hero's bottom edge (pulled up via -mt-16 in LandingPage).
+// - Jumlah Penduduk: nilai statis sesuai data desa
+// - Permohonan Diproses: fetch live dari tabel service_requests (status: pending, kades_review, signed)
+
+import { useEffect, useState } from 'react'
+import { supabase } from '../../services/supabase'
+import FadeUp from '../FadeUp'
 
 function UsersIcon() {
   return (
@@ -32,39 +38,29 @@ function ClipboardIcon() {
   )
 }
 
-const STATS = [
-  {
-    label: 'Warga Terdaftar',
-    value: '12.543',
-    icon: <UsersIcon />,
-    iconColor: 'text-[#1e5fb8]',
-  },
-  {
-    label: 'Permohonan Diproses',
-    value: '8.921',
-    icon: <DocumentCheckIcon />,
-    iconColor: 'text-[#16a372]',
-  },
-  {
-    label: 'Rata-rata Waktu Proses',
-    value: '2,5 hari',
-    icon: <ClockIcon />,
-    iconColor: 'text-[#1e5fb8]',
-  },
-  {
-    label: 'Layanan Tersedia',
-    value: '6',
-    icon: <ClipboardIcon />,
-    iconColor: 'text-[#f59e0b]',
-  },
-]
+// Status yang dianggap "sedang diproses"
+const IN_PROGRESS_STATUSES = ['pending', 'kades_review', 'signed']
 
-function StatCard({ label, value, icon, iconColor }) {
+async function fetchInProgressCount() {
+  if (!supabase) return null
+  const { count, error } = await supabase
+    .from('service_requests')
+    .select('id', { count: 'exact', head: true })
+    .in('status', IN_PROGRESS_STATUSES)
+  if (error) return null
+  return count
+}
+
+function StatCard({ label, value, icon, iconColor, loading = false }) {
   return (
     <article className="bg-white border border-[#e5e7eb] rounded-lg p-6 flex items-start justify-between shadow-sm">
       <div className="flex flex-col gap-1">
         <p className="text-sm text-[#6b7280] font-normal leading-5">{label}</p>
-        <p className="text-[30px] font-semibold text-[#1a1a1a] leading-9 tracking-[0.4px]">{value}</p>
+        {loading ? (
+          <div className="h-9 w-16 rounded bg-gray-100 animate-pulse mt-1" aria-label="Memuat data..." />
+        ) : (
+          <p className="text-[30px] font-semibold text-[#1a1a1a] leading-9 tracking-[0.4px]">{value}</p>
+        )}
       </div>
       <div className={`bg-[#f3f4f6] rounded-lg p-3 shrink-0 ${iconColor}`}>
         {icon}
@@ -74,12 +70,61 @@ function StatCard({ label, value, icon, iconColor }) {
 }
 
 export default function StatsSection() {
+  const [inProgressCount, setInProgressCount] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchInProgressCount().then((count) => {
+      setInProgressCount(count)
+      setLoading(false)
+    })
+  }, [])
+
+  const displayCount = loading
+    ? null
+    : inProgressCount !== null
+      ? inProgressCount.toLocaleString('id-ID')
+      : '—'
+
+  const STATS = [
+    {
+      label: 'Jumlah Penduduk',
+      value: '2.917',
+      icon: <UsersIcon />,
+      iconColor: 'text-[#1e5fb8]',
+      loading: false,
+    },
+    {
+      label: 'Permohonan Diproses',
+      value: displayCount,
+      icon: <DocumentCheckIcon />,
+      iconColor: 'text-[#16a372]',
+      loading: loading,
+    },
+    {
+      label: 'Rata-rata Waktu Proses',
+      value: '2,5 hari',
+      icon: <ClockIcon />,
+      iconColor: 'text-[#1e5fb8]',
+      loading: false,
+    },
+    {
+      label: 'Layanan Tersedia',
+      value: '6',
+      icon: <ClipboardIcon />,
+      iconColor: 'text-[#f59e0b]',
+      loading: false,
+    },
+  ]
+
   return (
     <section aria-label="Statistik layanan">
       <div className="max-w-[1280px] mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STATS.map((stat) => (
-            <StatCard key={stat.label} {...stat} />
+          {STATS.map((stat, i) => (
+            <FadeUp key={stat.label} delay={i * 80}>
+              <StatCard {...stat} />
+            </FadeUp>
           ))}
         </div>
       </div>

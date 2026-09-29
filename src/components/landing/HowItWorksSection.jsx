@@ -1,3 +1,5 @@
+import FadeUp from '../FadeUp'
+
 const STEPS = [
   {
     number: '01',
@@ -59,7 +61,7 @@ export default function HowItWorksSection() {
       <div className="max-w-[1280px] mx-auto px-4">
 
         {/* Header */}
-        <div className="text-center mb-14">
+        <FadeUp className="text-center mb-14">
           <span
             className="inline-block px-3 py-1 rounded-full text-[13px] font-medium mb-4"
             style={{ background: 'rgba(30,95,184,0.08)', color: '#1e5fb8' }}
@@ -72,16 +74,18 @@ export default function HowItWorksSection() {
           <p className="mt-4 text-[15px] sm:text-[18px] text-[#6b7280] leading-7 max-w-[560px] mx-auto">
             Empat langkah sederhana untuk mendapatkan dokumen administrasi desa secara online
           </p>
-        </div>
+        </FadeUp>
 
-        {/* Steps */}
+        {/* Steps — each step staggered */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
           {STEPS.map((step, i) => (
-            <div key={step.number} className="flex flex-col items-center text-center relative">
+            <FadeUp key={step.number} delay={i * 100} className="flex flex-col items-center text-center relative">
               {/* Connector arrow — hidden on last item and on mobile */}
               {i < STEPS.length - 1 && (
-                <div className="hidden lg:flex absolute top-[28px] left-[calc(50%+44px)] right-0 justify-center items-center pointer-events-none"
-                  style={{ width: 'calc(100% - 56px)', left: 'calc(50% + 44px)' }}>
+                <div
+                  className="hidden lg:flex absolute top-[28px] left-[calc(50%+44px)] right-0 justify-center items-center pointer-events-none"
+                  style={{ width: 'calc(100% - 56px)', left: 'calc(50% + 44px)' }}
+                >
                   <ArrowIcon />
                 </div>
               )}
@@ -108,7 +112,7 @@ export default function HowItWorksSection() {
               <p className="text-[14px] text-[#6b7280] leading-6 max-w-[220px]">
                 {step.description}
               </p>
-            </div>
+            </FadeUp>
           ))}
         </div>
       </div>

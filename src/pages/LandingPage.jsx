@@ -6,6 +6,7 @@ import StatsSection from '../components/landing/StatsSection'
 import HowItWorksSection from '../components/landing/HowItWorksSection'
 import ServicesSection from '../components/landing/ServicesSection'
 import FeaturesSection from '../components/landing/FeaturesSection'
+import FadeUp from '../components/FadeUp'
 import { ROUTES } from '../routes/routes'
 
 function CtaSection() {
@@ -16,30 +17,32 @@ function CtaSection() {
       aria-label="Call to action"
     >
       <div className="max-w-[1280px] mx-auto px-4 text-center">
-        <h2 className="font-medium text-white leading-tight tracking-[0.37px] mb-4" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
-          Siap Mengajukan Permohonan?
-        </h2>
-        <p className="text-[15px] sm:text-[18px] leading-7 max-w-[480px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.9)' }}>
-          Daftar sekarang dan nikmati kemudahan layanan administrasi Desa Wates secara online
-        </p>
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Link to={ROUTES.REGISTER}>
-            <button className="h-12 px-8 rounded-xl bg-white text-[#1e5fb8] font-semibold text-[16px] hover:bg-blue-50 transition-colors cursor-pointer">
-              Daftar Sekarang
-            </button>
-          </Link>
-          <Link to={ROUTES.LOGIN}>
-            <button
-              className="h-12 px-8 rounded-xl font-semibold text-[16px] text-white cursor-pointer border-0 hover:bg-white/10 transition-colors"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-            >
-              Masuk ke Akun
-            </button>
-          </Link>
-        </div>
-        <p className="mt-6 text-[13px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Jam layanan: Senin–Jumat 08.00–15.00 WIB &nbsp;·&nbsp; Balai Desa Wates, Kec. Tanjunganom, Kab. Nganjuk
-        </p>
+        <FadeUp threshold={0.1}>
+          <h2 className="font-medium text-white leading-tight tracking-[0.37px] mb-4" style={{ fontSize: 'clamp(22px, 5vw, 36px)', lineHeight: '1.2' }}>
+            Siap Mengajukan Permohonan?
+          </h2>
+          <p className="text-[15px] sm:text-[18px] leading-7 max-w-[480px] mx-auto mb-8" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            Daftar sekarang dan nikmati kemudahan layanan administrasi Desa Wates secara online
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link to={ROUTES.REGISTER}>
+              <button className="h-12 px-8 rounded-xl bg-white text-[#1e5fb8] font-semibold text-[16px] hover:bg-blue-50 transition-colors cursor-pointer">
+                Daftar Sekarang
+              </button>
+            </Link>
+            <Link to={ROUTES.LOGIN}>
+              <button
+                className="h-12 px-8 rounded-xl font-semibold text-[16px] text-white cursor-pointer border-0 hover:bg-white/10 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.15)' }}
+              >
+                Masuk ke Akun
+              </button>
+            </Link>
+          </div>
+          <p className="mt-6 text-[13px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            Jam layanan: Senin–Jumat 08.00–15.00 WIB &nbsp;·&nbsp; Balai Desa Wates, Kec. Tanjunganom, Kab. Nganjuk
+          </p>
+        </FadeUp>
       </div>
     </section>
   )

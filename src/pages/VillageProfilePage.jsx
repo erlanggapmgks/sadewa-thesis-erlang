@@ -1,5 +1,6 @@
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
+import FadeUp from '../components/FadeUp'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -127,12 +128,14 @@ export default function VillageProfilePage() {
         {/* Hero */}
         <section style={{ background: HERO_GRADIENT }} className="py-16">
           <div className="max-w-[1280px] mx-auto px-4">
-            <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
-              Profil Desa Wates
-            </h1>
-            <p className="mt-4 text-[20px] leading-7 tracking-[-0.45px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
-              Mengenal sejarah, visi, dan struktur organisasi pemerintahan desa kami
-            </p>
+            <FadeUp threshold={0}>
+              <h1 className="font-medium text-[48px] text-white leading-[48px] tracking-[0.35px]">
+                Profil Desa Wates
+              </h1>
+              <p className="mt-4 text-[20px] leading-7 tracking-[-0.45px]" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                Mengenal sejarah, visi, dan struktur organisasi pemerintahan desa kami
+              </p>
+            </FadeUp>
           </div>
         </section>
 
@@ -140,8 +143,10 @@ export default function VillageProfilePage() {
         <div className="relative z-10 -mt-12">
           <div className="max-w-[1280px] mx-auto px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {STATS.map((s) => (
-                <StatCard key={s.label} {...s} />
+              {STATS.map((s, i) => (
+                <FadeUp key={s.label} delay={i * 80}>
+                  <StatCard {...s} />
+                </FadeUp>
               ))}
             </div>
           </div>
@@ -151,7 +156,7 @@ export default function VillageProfilePage() {
         <div className="max-w-[1280px] mx-auto px-4">
 
           {/* Sejarah Desa */}
-          <div className="pt-16">
+          <FadeUp className="pt-16">
             <Card title="Sejarah Desa">
               <div className="flex flex-col gap-4">
                 {SEJARAH_PARAGRAPHS.map((p, i) => (
@@ -161,10 +166,10 @@ export default function VillageProfilePage() {
                 ))}
               </div>
             </Card>
-          </div>
+          </FadeUp>
 
           {/* Batas Wilayah */}
-          <div className="pt-10">
+          <FadeUp className="pt-10">
             <Card title="Batas Wilayah">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {BATAS_WILAYAH.map(({ arah, desa }) => (
@@ -175,32 +180,34 @@ export default function VillageProfilePage() {
                 ))}
               </div>
             </Card>
-          </div>
+          </FadeUp>
 
           {/* Visi & Misi */}
           <div className="pt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Visi */}
-            <Card title="Visi">
-              <p className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">
-                Menjadi desa yang cerdas, berkelanjutan, dan sejahtera yang memanfaatkan teknologi untuk meningkatkan kualitas hidup warga sembari melestarikan warisan budaya dan lingkungan.
-              </p>
-            </Card>
+            <FadeUp>
+              <Card title="Visi">
+                <p className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">
+                  Menjadi desa yang cerdas, berkelanjutan, dan sejahtera yang memanfaatkan teknologi untuk meningkatkan kualitas hidup warga sembari melestarikan warisan budaya dan lingkungan.
+                </p>
+              </Card>
+            </FadeUp>
 
-            {/* Misi */}
-            <Card title="Misi">
-              <ul className="flex flex-col gap-2 list-none p-0 m-0">
-                {MISI_ITEMS.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-[#1e5fb8] text-base leading-6 shrink-0 mt-0">•</span>
-                    <span className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+            <FadeUp delay={100}>
+              <Card title="Misi">
+                <ul className="flex flex-col gap-2 list-none p-0 m-0">
+                  {MISI_ITEMS.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[#1e5fb8] text-base leading-6 shrink-0 mt-0">•</span>
+                      <span className="text-base text-[#6b7280] leading-6 tracking-[-0.31px]">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </FadeUp>
           </div>
 
           {/* Struktur Organisasi */}
-          <div className="py-16">
+          <FadeUp className="py-16">
             <Card title="Struktur Organisasi">
               <div className="flex flex-col gap-4">
                 {STRUKTUR.map((person) => (
@@ -208,7 +215,7 @@ export default function VillageProfilePage() {
                 ))}
               </div>
             </Card>
-          </div>
+          </FadeUp>
 
         </div>
       </main>
