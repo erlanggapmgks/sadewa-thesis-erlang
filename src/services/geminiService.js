@@ -62,14 +62,10 @@ function repairNikFromDate(ocrNik, tanggalLahirISO) {
   const dayMale   = String(dd).padStart(2, '0')
   const dayFemale = String(dd + 40).padStart(2, '0')
 
-  // For 15-digit NIK: the missing OCR char was somewhere in pos 6-11 (date area).
-  // We reconstruct positions 6-11 entirely from the known date.
-  // The sequence (last 4 digits) comes from positions 12-15 of the 16-digit padded NIK
-  // or positions 11-14 of the 15-digit NIK.
   const prefix = ocrNik.slice(0, 6)
   const suffix = ocrNik.length === 16
-    ? ocrNik.slice(12)   // last 4 digits of a 16-digit NIK
-    : ocrNik.slice(11)   // last 4 digits of a 15-digit NIK (missing 1 in date area)
+    ? ocrNik.slice(12)
+    : ocrNik.slice(11)
 
   for (const dayPart of [dayFemale, dayMale]) {
     const dateSeg = `${dayPart}${month}${yy}`
@@ -82,8 +78,56 @@ function repairNikFromDate(ocrNik, tanggalLahirISO) {
     }
   }
 
-  // Could not verify — return original (user corrects manually)
   return ocrNik
+}
+
+// Repair NIK region code (first 6 digits) using kabupaten/kota name from KTP header.
+// OCR sometimes misreads digits in the region code (e.g. 8→4, 1→l, etc.).
+// We ONLY repair if the OCR prefix differs from the known code by at most 2 digits —
+// this prevents overwriting a genuinely different region code (e.g. KTP from another
+// province) with a false match from the header text.
+function repairNikRegionCode(ocrNik, kabupatenName) {
+  if (!ocrNik || ocrNik.length !== 16) return ocrNik
+  if (!kabupatenName) return ocrNik
+  const key = kabupatenName.toUpperCase().trim()
+  const knownCode = KODE_WILAYAH[key]
+  if (!knownCode) return ocrNik
+  if (ocrNik.startsWith(knownCode)) return ocrNik  // already correct
+
+  // Count how many digits differ between OCR prefix and known code
+  const ocrPrefix = ocrNik.slice(0, 6)
+  let diffCount = 0
+  for (let i = 0; i < 6; i++) {
+    if (ocrPrefix[i] !== knownCode[i]) diffCount++
+  }
+  // Only repair if exactly 1 digit is wrong (single OCR misread, e.g. 8→4).
+  // 2+ digit differences likely indicate a legitimately different sub-district code,
+  // not an OCR error — don't overwrite those.
+  if (diffCount !== 1) return ocrNik
+
+  const repaired = knownCode + ocrNik.slice(6)
+  console.log(`[SADEWA OCR] NIK region code repaired (${kabupatenName}, ${diffCount} digit diff): ${ocrNik} → ${repaired}`)
+  return repaired
+}
+// Used to cross-validate and correct OCR errors in the region-code part of a NIK.
+// Keyed by kabupaten/kota name (uppercase, stripped of "KABUPATEN"/"KOTA" prefix).
+const KODE_WILAYAH = {
+  // Jawa Timur — Kabupaten
+  'NGANJUK':     '351811', // Kab. Nganjuk
+  'PACITAN':     '350111', 'PONOROGO':   '350211', 'TRENGGALEK':  '350311',
+  'TULUNGAGUNG': '350411', 'BLITAR':     '350511', 'KEDIRI':      '350611',
+  'MALANG':      '350711', 'LUMAJANG':   '350811', 'JEMBER':      '350911',
+  'BANYUWANGI':  '351011', 'BONDOWOSO':  '351111', 'SITUBONDO':   '351211',
+  'PROBOLINGGO': '351311', 'PASURUAN':   '351411', 'SIDOARJO':    '351511',
+  'MOJOKERTO':   '351611', 'JOMBANG':    '351711', 'MADIUN':      '351911',
+  'MAGETAN':     '352011', 'NGAWI':      '352111', 'BOJONEGORO':  '352211',
+  'TUBAN':       '352311', 'LAMONGAN':   '352411', 'GRESIK':      '352511',
+  'BANGKALAN':   '352611', 'SAMPANG':    '352711', 'PAMEKASAN':   '352811',
+  'SUMENEP':     '352911',
+  // Kota
+  'KEDIRI KOTA':     '357111', 'BLITAR KOTA':    '357211', 'MALANG KOTA':   '357311',
+  'PROBOLINGGO KOTA':'357411', 'PASURUAN KOTA':  '357511', 'MOJOKERTO KOTA':'357611',
+  'MADIUN KOTA':     '357711', 'SURABAYA':       '357811', 'BATU':          '357911',
 }
 
 // Pick the best birth date between an OCR-read date and a NIK-derived date.
@@ -116,12 +160,13 @@ function parseKTPText(raw) {
 
   // Extract value from a labeled line robustly.
   // Handles every separator variant seen in real KTP OCR output:
-  //   ':'  → "Nama : HARTINI"          (normal)
-  //   '-'  → "Nama - HARTINI"          (OCR misreads ':' as '-')
-  //   '|'  → "Nama | HARTINI"          (OCR misreads ':' as '|')
-  //   '.'  → "Nama . HARTINI"          (OCR misreads ':' as '.')
+  //   ':'  → "Nama : HARTINI"                (normal)
+  //   '-'  → "Nama - HARTINI"                (OCR misreads ':' as '-')
+  //   '|'  → "Nama | HARTINI"                (OCR misreads ':' as '|')
+  //   '.'  → "Nama . HARTINI"                (OCR misreads ':' as '.')
+  //   glued→ "TempatTglLahir NGANJUK ..."    (label and value on same line, no separator)
   //   none → label-only line, value on next line
-  function extractValueFromLine(line, nextLine = '') {
+  function extractValueFromLine(line, nextLine = '', labelPattern = null) {
     // Try colon first (most common)
     const colonIdx = line.indexOf(':')
     if (colonIdx >= 0) {
@@ -133,6 +178,13 @@ function parseKTPText(raw) {
     const sepMatch = line.match(/^([A-Za-z\/\s]{3,}?)\s+[-|.–]\s+(.+)$/)
     if (sepMatch && sepMatch[2].trim()) {
       return { value: sepMatch[2].trim(), consumedNext: false }
+    }
+    // Glued label+value (no separator, no space between label end and value):
+    // e.g. "Tempatfigilahir NGANJUK 10072004"
+    // Strip the matched label prefix from the line start and take the rest.
+    if (labelPattern) {
+      const stripped = line.replace(labelPattern, '').replace(/^[\s:.\-|]+/, '').trim()
+      if (stripped.length > 1) return { value: stripped, consumedNext: false }
     }
     // Label-only line (no separator at all) → value is on the next line
     if (nextLine && !KTP_LABEL.test(nextLine) && nextLine.length > 1) {
@@ -147,17 +199,24 @@ function parseKTPText(raw) {
 
     const { value: firstValue, consumedNext } = extractValueFromLine(
       lines[idx],
-      lines[idx + 1] ?? ''
+      lines[idx + 1] ?? '',
+      labelPattern    // pass pattern so glued label+value can be split
     )
     let value = firstValue
     const startIdx = consumedNext ? idx + 2 : idx + 1
 
     // Collect continuation lines until the next KTP field label
     for (let i = startIdx; i < lines.length; i++) {
-      const next = lines[i]
+      let next = lines[i]
       if (KTP_LABEL.test(next)) break          // next field starts → stop
       if (next.length < 2) break                // empty line → stop
       if (/^\d{16}$/.test(next)) break          // looks like a NIK row → stop
+      // Strip leading OCR noise punctuation (e.g. "- PAMUNGKAS" → "PAMUNGKAS")
+      next = next.replace(/^[\s\-–~_|.]+/, '').trim()
+      if (next.length < 2) continue             // skip if nothing left after strip
+      // For TTL field: stop collecting once we already have a date — extra lines
+      // after the date are noise (e.g. ".. Kecamatan -TANJUNGANOM")
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value) || value.match(/\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/)) break
       value = (value + ' ' + next).trim()
     }
     return value
@@ -190,7 +249,11 @@ function parseKTPText(raw) {
     if (exactMatch) {
       nik = exactMatch[0]
     } else {
-      // Step 2: apply conservative OCR letter→digit substitutions on first token only
+      // Step 2: apply conservative OCR letter→digit substitutions on first token only.
+      // HIGH-CONFIDENCE subs only (near-identical glyph): O→0, l/I→1, Z→2, S→5, B→8, G→6
+      // NOTE: we do NOT substitute u/U here because 'u' replaces ONE digit (not adds one).
+      // Substituting u→0 turns a 16-char token into 17 digits, breaking slice logic.
+      // Instead, if subs + strip gives 15 digits, repairNikFromDate recovers the rest.
       const conservative = firstToken
         .replace(/[oO]/g, '0')
         .replace(/[lI]/g, '1')
@@ -199,18 +262,21 @@ function parseKTPText(raw) {
         .replace(/[bB]/g, '8')
         .replace(/[gG]/g, '6')
       const tokenDigits = conservative.replace(/\D/g, '')
-      // Accept 15 or 16 digits — 15-digit result means 1 letter was unresolvable
-      // (e.g. "kL" → stripped 1 char after subs). repairNikFromDate will fix the
-      // date-encoding portion; pad with a placeholder '0' temporarily.
+
       if (tokenDigits.length === 16) {
         nik = tokenDigits
       } else if (tokenDigits.length === 15) {
-        // 15 digits: 1 char was unresolvable (e.g. "kL" → stripped one extra char).
-        // Pass the raw 15-digit string to repairNikFromDate which will reconstruct
-        // the full 16-digit NIK using the birth date from Tempat/Tgl Lahir.
+        // 1 unresolvable char (e.g. 'u', 'k') was stripped — repairNikFromDate
+        // will reconstruct the date portion from tanggalLahirOCR.
         nik = tokenDigits
+      } else if (tokenDigits.length > 16) {
+        // Over-substitution: a letter became a digit adding an extra one.
+        // Take the longest contiguous digit run from the conservative string.
+        const runs = conservative.match(/\d+/g) || []
+        const longest = runs.reduce((a, b) => a.length >= b.length ? a : b, '')
+        if (longest.length >= 15) nik = longest.slice(0, 16)
       }
-      // If < 15 digits, NIK is too corrupted — leave empty, fallback below
+      // < 15 digits → too corrupted, leave empty, fulltext fallback below
     }
   }
   if (!nik) {
@@ -222,26 +288,106 @@ function parseKTPText(raw) {
   // Nama: trim trailing OCR noise (e.g. "BAGAS PRATAMA 9" → "BAGAS PRATAMA")
   // Pattern is tolerant: matches "Nama :" / "Nama ." / "Nama -" / plain "Nama"
   const namaRaw = extractMultilineValue(/^Nama\b/i)
-  const nama = namaRaw
+
+  // Helper: detect if a name string has concatenated words (no spaces between all-caps words).
+  // If so, try to insert spaces at plausible word boundaries.
+  // Indonesian names tend to be 3-10 chars per word. We use a simple greedy split
+  // that tries chunk sizes 4-9 left-to-right so common names split naturally:
+  //   "ERLANGGADWIANANDA" → try 8="ERLANGGA", rest="DWIANANDA"(9) → try 4="DWIN" no...
+  // Actually we just detect the glueing and let the form field show it for manual edit,
+  // but we DO properly split "- PAMUNGKAS" continuation and strip noise tokens.
+  // Split a run of glued all-caps Indonesian name words.
+  // e.g. "ERLANGGADWIANANDA" → "ERLANGGA DWI ANANDA"
+  //
+  // Strategy: match known Indonesian name prefixes/words left-to-right.
+  // This is more reliable than pure DP because DP has no linguistic knowledge.
+  // We use a small but high-coverage list of common Indonesian name morphemes.
+  function splitGluedName(str) {
+    // Common Indonesian name morphemes sorted longest-first for greedy matching.
+    // Covers the most frequent name components seen in Indonesian KTP.
+    const NAME_DICT = [
+      // 9-char
+      'PAMUNGKAS','PRASETYO','NUGROHO','SOEKARNO','WAHYUDI',
+      // 8-char
+      'ERLANGGA','PRASASTA','PRIYANKA','MAHARANI','RAHMAWATI','SANTOSO',
+      // 7-char
+      'BINTANG','SAPUTRA','PRABOWO','KUSUMA','WARDANA','HIDAYAT',
+      // 6-char
+      'ANANDA','CAHAYA','SATRIA','RAHAYU','SUSILO','WIBOWO','WIJAYA',
+      'IRAWAN','GUNAWAN','SULISTYO','RAHMAN',
+      // 5-char
+      'PUTRA','PUTRI','SURYA','RIZKY','PRIMA','ARIEF','YUSUF','FAJAR',
+      'INDRA','WAHYU','AGUNG','BAGUS','BAGAS','AHMAD','HASAN',
+      // 4-char
+      'DIAN','BUDI','YOGI','ANDI','RUDI','SARI','DEWI','HENDRA',
+      'MAYA','DENI','REZA','YOGA','RIAN','NISA',
+      // 3-char
+      'DWI','TRI','AYU','EKA','IDA','IRA','SRI','ADI','NUR',
+    ].sort((a, b) => b.length - a.length)
+
+    return str.replace(/[A-Z]{11,}/g, (run) => {
+      let remaining = run
+      const words = []
+      while (remaining.length > 0) {
+        let matched = false
+        for (const word of NAME_DICT) {
+          if (remaining.startsWith(word)) {
+            const rest = remaining.length - word.length
+            if (rest === 0 || rest >= 3) {
+              words.push(word)
+              remaining = remaining.slice(word.length)
+              matched = true
+              break
+            }
+          }
+        }
+        if (!matched) {
+          if (remaining.length <= 10) { words.push(remaining); break }
+          // No dict match on a long run — split in half as fallback
+          const chunkLen = Math.ceil(remaining.length / 2)
+          words.push(remaining.slice(0, chunkLen))
+          remaining = remaining.slice(chunkLen)
+        }
+      }
+      return words.length > 1 ? words.join(' ') : run
+    })
+  }
+
+  const nama = splitGluedName(namaRaw)
     .replace(/!/g, 'I')                      // OCR reads 'I' as '!' in all-caps names
-    .replace(/0(?=[a-zA-Z])|(?<=[a-zA-Z])0/g, 'O') // OCR reads 'O' as '0' inside names
     .replace(/\s+\d[\d\s]*$/, '')            // remove trailing digits
+    .replace(/^[\s\-–~_|.=]+/, '')           // strip leading noise
+    // Remove trailing noise tokens (short lowercase junk like "ox", "ee", "po")
+    .replace(/(\s+[a-z]{1,3})+\s*$/i, '')
     .replace(/(^|\s)[a-z]{1}(\s|$)/ig, ' ')  // remove lone single-char noise tokens
     .replace(/[^a-zA-Z\s'.,-]/g, '')         // keep only name-safe characters
     .replace(/\s{2,}/g, ' ')
     .trim()
 
   // Tempat/Tgl Lahir — colon is optional, separator may also be '-' or '|'
-  // Also handle common OCR typos: "Tempat/Tgl Lahir", "Tempat Tgl Lahir", "Tempat/Tgt Lahir"
-  const ttlRaw = extractMultilineValue(/^Tempat\b/i)
+  // Also handles OCR typos where words are glued: "Tempatfigilahir", "Tempat/TglLahir"
+  const ttlRaw = extractMultilineValue(/^Tempat/i)
+    // Clean glued label residue: "figilahir NGANJUK..." → "NGANJUK..."
+    // Strip any lowercase run at the start that looks like leftover label chars
+    .replace(/^[a-z\/]+\s*/g, '')
+    // Strip trailing noise after date — e.g. "NGANJUK 10072004 po" → keep up to date
+    .replace(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}|\d{8})\s+\S.*$/, (m) => m.split(/\s+/)[0])
 
   // Try numeric date (allow spaces around separators: "10 - 07 - 2004")
   const numDateMatch = ttlRaw.match(/(\d{1,2}\s*[-\/]\s*\d{1,2}\s*[-\/]\s*\d{4})/)
+  // Try date with no separator at all: "10072004" (Tesseract drops dashes sometimes)
+  const noSepDateMatch = !numDateMatch && ttlRaw.match(/\b(\d{8})\b/)
   // Try Indonesian month-name date ("10 JULI 2004", "4 Agustus 1995")
   const bulanPattern = Object.keys(BULAN_ID).join('|')
   const nameMonthMatch = ttlRaw.match(new RegExp(`(\\d{1,2}\\s+(?:${bulanPattern})\\s+\\d{4})`, 'i'))
 
-  const dateStr = numDateMatch?.[1] || nameMonthMatch?.[1] || ''
+  let dateStr = numDateMatch?.[1] || nameMonthMatch?.[1] || ''
+
+  // Handle no-separator 8-digit date: "10072004" → "10-07-2004"
+  if (!dateStr && noSepDateMatch) {
+    const raw8 = noSepDateMatch[1]
+    dateStr = `${raw8.slice(0,2)}-${raw8.slice(2,4)}-${raw8.slice(4,8)}`
+  }
 
   const tanggalLahirOCR = dateStr ? dateToISO(dateStr) : ''
   const tanggalLahirNIK = nik ? dateFromNIK(nik) : ''
@@ -258,6 +404,20 @@ function parseKTPText(raw) {
   if (nik && nik.length >= 15 && tanggalLahirOCR) {
     if (dateFromNIK(nik.length === 15 ? nik + '0' : nik) !== tanggalLahirOCR) {
       nik = repairNikFromDate(nik, tanggalLahirOCR)
+    }
+  }
+
+  // NIK region code repair: cross-validate prefix with Kabupaten/Kota from header.
+  // Extracts "NGANJUK" from "KABUPATEN NGANJUK" (or "| KABUPATEN NGANJUK") and
+  // looks up the known 6-digit region code to fix OCR errors in the prefix.
+  if (nik && nik.length === 16) {
+    const kabHeaderLine = lines.find(l => /^[^a-zA-Z]*(KABUPATEN|KOTA)\s+\w+/i.test(l))
+    if (kabHeaderLine) {
+      const kabName = kabHeaderLine
+        .replace(/^[^a-zA-Z]*/, '')
+        .replace(/^(KABUPATEN|KOTA)\s+/i, '')
+        .trim().split(/\s+/)[0]
+      if (kabName) nik = repairNikRegionCode(nik, kabName)
     }
   }
 
@@ -287,13 +447,15 @@ function parseKTPText(raw) {
   // We gather every address-related segment and stitch them together.
 
   function extractAfterColon(line) {
-    const colonIdx = line.indexOf(':')
-    if (colonIdx >= 0) return line.slice(colonIdx + 1).trim()
+    // Strip leading non-letter noise first (e.g. "..— ", "| ", "~~ ")
+    const cleanLine = line.replace(/^[^a-zA-Z]+/, '')
+    const colonIdx = cleanLine.indexOf(':')
+    if (colonIdx >= 0) return cleanLine.slice(colonIdx + 1).trim()
     // Real KTP OCR often reads ':' as '-' or '|'. If the line starts with a label word
     // followed by a dash or pipe, treat it as the separator.
-    const dashMatch = line.match(/^[A-Za-z\/\s.]+?\s*[-–|]\s*(.+)$/)
+    const dashMatch = cleanLine.match(/^[A-Za-z\/\s.]+?\s*[-–|]\s*(.+)$/)
     if (dashMatch) return dashMatch[1].trim()
-    return line.trim()
+    return cleanLine.trim()
   }
 
   // Clean a single address segment:
@@ -419,12 +581,15 @@ function parseKTPText(raw) {
     return fromLabelClean
   }
 
-  // Fuzzy label search — tolerant of common OCR typos:
-  //   Kecamatan → Kecamalan, Kecomatan, Kecamatan. (dot), Kec. (short), Kec : (spaces)
-  function findLineByFuzzyLabel(labels, minConfidence = 0.6) {
-    // labels is array: [{ prefix: 'Kecamatan', variants: ['kec','kecam','kecamatan','kecmal','kecomatan'] }]
+  // Fuzzy label search — tolerant of common OCR typos and leading noise chars.
+  //   Kecamatan → Kecamalan, Kecomatan, "..— Kecamatan", "Kec.", "Kec :"
+  function findLineByFuzzyLabel(labels) {
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].toLowerCase().replace(/[\s:.-]/g, '')
+      // Strip ALL non-letter chars from the start (handles "..— ", "| ", "~~ " prefixes)
+      // then remove internal spaces/separators for variant matching
+      const line = lines[i].toLowerCase()
+        .replace(/^[^a-z]+/, '')       // strip leading non-letter chars
+        .replace(/[\s:.\-|~]/g, '')    // strip separators throughout
       for (const def of labels) {
         for (const v of def.variants) {
           if (line.startsWith(v) || line.includes(v + ':')) {
@@ -568,11 +733,30 @@ function parseKTPText(raw) {
 
   const alamat = addressParts.filter(Boolean).join(', ')
 
-  const found = [nik, nama, alamat].filter(Boolean).length
+  // Fallback: jika alamat kosong (Tesseract tidak detect baris Alamat/RT/RW/Kel),
+  // bangun alamat minimal dari komponen yang sempat terbaca: Kecamatan + Kabupaten header.
+  let alamatFinal = alamat
+  if (!alamatFinal) {
+    const fallbackParts = []
+    if (kecamatanName) fallbackParts.push(kecamatanName)
+    // Ambil nama Kabupaten/Kota dari baris header atas KTP.
+    // Strip leading non-letter noise ("| KABUPATEN NGANJUK" → "KABUPATEN NGANJUK")
+    const kabHeader = lines.find(l => /^[^a-zA-Z]*(KABUPATEN|KOTA)\s+\w+/i.test(l))
+    if (kabHeader) {
+      const kabName = kabHeader
+        .replace(/^[^a-zA-Z]*/, '')               // strip leading noise chars
+        .replace(/^(KABUPATEN|KOTA)\s+/i, '')      // strip label
+        .trim().split(/\s+/)[0]
+      if (kabName) fallbackParts.push(kabName)
+    }
+    if (fallbackParts.length > 0) alamatFinal = fallbackParts.join(', ')
+  }
+
+  const found = [nik, nama, alamatFinal].filter(Boolean).length
   const quality = found >= 2 ? 'good' : found === 1 ? 'blurry' : 'bad'
 
-  console.log(`[SADEWA OCR] KTP parsed → quality:${quality} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamat}`)
-  return { quality, nama, nik, tempatLahir, tanggalLahir, alamat }
+  console.log(`[SADEWA OCR] KTP parsed → quality:${quality} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamatFinal}`)
+  return { quality, nama, nik, tempatLahir, tanggalLahir, alamat: alamatFinal }
 }
 
 // Preprocess image: grayscale + contrast boost so Tesseract reads real KTPs better.
@@ -602,8 +786,7 @@ async function preprocessForOCR(file) {
         // from the guilloché pattern and blue background.
         // Text ink on a real KTP is typically ≈ 0-100 (can be slightly grey due to
         // printing/scanning). Threshold at 120 keeps text dark and pushes the guilloché
-        // pattern + blue background to white. Raised from 80 to 120 so medium-grey text
-        // (like digit edges on some KTPs) is no longer lost.
+        // pattern + blue background to white.
         const v = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
         px[i] = px[i + 1] = px[i + 2] = v < 120 ? v : 255
       }
@@ -660,7 +843,7 @@ Lihat gambar KTP dan ekstrak data berikut. Kembalikan HANYA JSON di bawah ini, t
   "nik": "16 angka tepat setelah label NIK : (hapus semua spasi)",
   "tempat_lahir": "nama kota sebelum koma pada baris Tempat/Tgl Lahir",
   "tanggal_lahir": "tanggal lahir format DD-MM-YYYY dari baris yang sama",
-  "alamat": "RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
+  "alamat": "nama jalan/dusun (baris Alamat), RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
 }
 
 Aturan quality: "good" = semua field terbaca, "blurry" = sebagian terbaca, "bad" = bukan KTP.
@@ -670,13 +853,15 @@ Panduan penting:
 - Pojok kanan bawah ada tanggal penerbitan dan tanda tangan — ABAIKAN, bukan tanggal lahir
 - NIK tepat 16 digit — baca satu per satu dengan teliti
 - Baris Tempat/Tgl Lahir berisi KOTA lalu TANGGAL dipisah koma: pisahkan ke dua field yang berbeda
-- Field alamat: susun PERSIS dengan format "RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
+- Field alamat: susun SEMUA komponen dengan format lengkap berikut:
+  → Jalan/Dusun: teks dari baris Alamat (misal "DESA WATES", "JL. MERDEKA NO. 5", "DSUN KRAJAN")
   → RT dan RW: ambil angka dari baris RT/RW, tulis "RT 002 RW 002" (3 digit, pisah spasi)
   → Kel/Desa: nama dari baris Kel/Desa
   → Kecamatan: nama dari baris Kecamatan
   → Kabupaten/Kota: dari header atas kartu (baris KABUPATEN ... atau KOTA ...)
-  → Contoh hasil: "RT 002 RW 002, WATES, TANJUNGANOM, NGANJUK"
-  → JANGAN sertakan teks dari baris Alamat (nama jalan/no rumah) — cukup RT/RW + Kel/Desa + Kecamatan + Kabupaten
+  → Contoh hasil: "DESA WATES, RT 002 RW 002, WATES, TANJUNGANOM, NGANJUK"
+  → Contoh hasil lain: "JL. MERDEKA NO. 5, RT 001 RW 003, KARANGREJO, TULUNGAGUNG, TULUNGAGUNG"
+  → Jika baris Alamat kosong atau tidak terbaca, mulai dari RT/RW
 - Jika field tidak terbaca, isi string kosong ""`
 
 function fileToBase64(file) {
