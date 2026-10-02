@@ -199,11 +199,12 @@ DROP POLICY IF EXISTS "kades_update_requests"          ON public.service_request
 DROP POLICY IF EXISTS "kades_read_all_profiles"        ON public.profiles;
 DROP POLICY IF EXISTS "kades_read_all_extracted"       ON public.extracted_documents;
 
--- Kepala desa bisa baca surat yang sudah diteruskan (kades_review) atau sudah TTD
+-- Kepala desa bisa baca surat yang sudah diteruskan (kades_review), sudah TTD, ditolak,
+-- atau sudah selesai diproses admin (completed) — history tetap terlihat
 CREATE POLICY "kades_read_forwarded_requests" ON public.service_requests
   FOR SELECT USING (
     public.get_my_role() = 'kepala_desa'
-    AND status IN ('kades_review', 'signed', 'rejected')
+    AND status IN ('kades_review', 'signed', 'rejected', 'completed')
   );
 
 -- Kepala desa bisa update (TTD atau tolak) surat

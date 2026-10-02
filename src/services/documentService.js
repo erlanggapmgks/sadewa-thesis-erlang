@@ -89,7 +89,7 @@ export async function getKadesRequests() {
   const { data, error } = await supabase
     .from('service_requests')
     .select('*, profiles!user_id(full_name, email, nik)')
-    .in('status', ['kades_review', 'signed', 'rejected'])
+    .in('status', ['kades_review', 'signed', 'rejected', 'completed'])
     .order('created_at', { ascending: false })
   if (error) return []
   return data

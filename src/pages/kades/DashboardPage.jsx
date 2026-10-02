@@ -40,7 +40,7 @@ export default function KadesDashboardPage() {
   }, [])
 
   const waiting  = requests.filter(r => r.status === 'kades_review').length
-  const signed   = requests.filter(r => r.status === 'signed').length
+  const signed   = requests.filter(r => r.status === 'signed' || r.status === 'completed').length
   const rejected = requests.filter(r => r.status === 'rejected').length
   const recent   = requests.filter(r => r.status === 'kades_review').slice(0, 5)
 

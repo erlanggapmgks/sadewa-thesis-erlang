@@ -242,39 +242,55 @@ function parseKTPText(raw) {
     const nikContext = nikVal || lines.slice(nikLineIdx, nikLineIdx + 2).join(' ')
 
     // Step 1: look for an unbroken 16-digit run in the first whitespace token
-    // (separates NIK digits from trailing line noise like "R 5")
     const firstToken = nikContext.trim().split(/\s+/)[0]
-
     const exactMatch = firstToken.match(/\d{16}/)
     if (exactMatch) {
       nik = exactMatch[0]
     } else {
-      // Step 2: apply conservative OCR letter→digit substitutions on first token only.
-      // HIGH-CONFIDENCE subs only (near-identical glyph): O→0, l/I→1, Z→2, S→5, B→8, G→6
-      // NOTE: we do NOT substitute u/U here because 'u' replaces ONE digit (not adds one).
-      // Substituting u→0 turns a 16-char token into 17 digits, breaking slice logic.
-      // Instead, if subs + strip gives 15 digits, repairNikFromDate recovers the rest.
-      const conservative = firstToken
-        .replace(/[oO]/g, '0')
-        .replace(/[lI]/g, '1')
-        .replace(/[zZ]/g, '2')
-        .replace(/[sS]/g, '5')
-        .replace(/[bB]/g, '8')
-        .replace(/[gG]/g, '6')
-      const tokenDigits = conservative.replace(/\D/g, '')
+      // Step 1b: NIK may have a space inserted by OCR (e.g. "351811100704 0002").
+      // Strip all spaces from the full nikContext up to the first non-digit/non-space
+      // noise token, then try for 16 consecutive digits.
+      const nikContextNoSpace = nikContext
+        .replace(/^([:\s]*)/, '')   // strip leading colon/space (after separator)
+        .split(/\s+/)               // split tokens
+        .filter(t => /^[\d\D]*$/.test(t))
+        // take tokens from start until we hit a clearly non-NIK token (letters only)
+        .reduce((acc, t) => {
+          if (acc.done) return acc
+          const stripped = t.replace(/\D/g, '')
+          if (acc.digits.length + stripped.length <= 16 + 2) {
+            return { digits: acc.digits + stripped, done: false }
+          }
+          return { ...acc, done: true }
+        }, { digits: '', done: false }).digits
 
-      if (tokenDigits.length === 16) {
-        nik = tokenDigits
-      } else if (tokenDigits.length === 15) {
-        // 1 unresolvable char (e.g. 'u', 'k') was stripped — repairNikFromDate
-        // will reconstruct the date portion from tanggalLahirOCR.
-        nik = tokenDigits
-      } else if (tokenDigits.length > 16) {
-        // Over-substitution: a letter became a digit adding an extra one.
-        // Take the longest contiguous digit run from the conservative string.
-        const runs = conservative.match(/\d+/g) || []
-        const longest = runs.reduce((a, b) => a.length >= b.length ? a : b, '')
-        if (longest.length >= 15) nik = longest.slice(0, 16)
+      if (nikContextNoSpace.length >= 15 && nikContextNoSpace.length <= 17) {
+        const spaceFixed = nikContextNoSpace.slice(0, 16)
+        if (spaceFixed.length === 16) {
+          nik = spaceFixed
+        } else if (spaceFixed.length === 15) {
+          nik = spaceFixed
+        }
+      } else {
+        // Step 2: apply conservative OCR letter→digit substitutions on first token only.
+        const conservative = firstToken
+          .replace(/[oO]/g, '0')
+          .replace(/[lI]/g, '1')
+          .replace(/[zZ]/g, '2')
+          .replace(/[sS]/g, '5')
+          .replace(/[bB]/g, '8')
+          .replace(/[gG]/g, '6')
+        const tokenDigits = conservative.replace(/\D/g, '')
+
+        if (tokenDigits.length === 16) {
+          nik = tokenDigits
+        } else if (tokenDigits.length === 15) {
+          nik = tokenDigits
+        } else if (tokenDigits.length > 16) {
+          const runs = conservative.match(/\d+/g) || []
+          const longest = runs.reduce((a, b) => a.length >= b.length ? a : b, '')
+          if (longest.length >= 15) nik = longest.slice(0, 16)
+        }
       }
       // < 15 digits → too corrupted, leave empty, fulltext fallback below
     }
@@ -357,8 +373,9 @@ function parseKTPText(raw) {
     .replace(/!/g, 'I')                      // OCR reads 'I' as '!' in all-caps names
     .replace(/\s+\d[\d\s]*$/, '')            // remove trailing digits
     .replace(/^[\s\-–~_|.=]+/, '')           // strip leading noise
-    // Remove trailing noise tokens (short lowercase junk like "ox", "ee", "po")
-    .replace(/(\s+[a-z]{1,3})+\s*$/i, '')
+    // Remove short lowercase noise tokens from anywhere in the name
+    // e.g. "ERLANGGA DWI ANANDA wy PAMUNGKAS" → "ERLANGGA DWI ANANDA PAMUNGKAS"
+    .replace(/\s+[a-z]{1,3}(\s|$)/g, ' ')
     .replace(/(^|\s)[a-z]{1}(\s|$)/ig, ' ')  // remove lone single-char noise tokens
     .replace(/[^a-zA-Z\s'.,-]/g, '')         // keep only name-safe characters
     .replace(/\s{2,}/g, ' ')
@@ -368,8 +385,15 @@ function parseKTPText(raw) {
   // Also handles OCR typos where words are glued: "Tempatfigilahir", "Tempat/TglLahir"
   const ttlRaw = extractMultilineValue(/^Tempat/i)
     // Clean glued label residue: "figilahir NGANJUK..." → "NGANJUK..."
-    // Strip any lowercase run at the start that looks like leftover label chars
-    .replace(/^[a-z\/]+\s*/g, '')
+    // "TgiLahir NGANJUK" → "NGANJUK" — strip any word(s) before first ALL-CAPS city name
+    // Strategy: remove everything before the first token that starts with uppercase
+    // and is followed by a comma or date (the actual value pattern)
+    .replace(/^[A-Za-z\/]+\s*/g, (m) => {
+      // Only strip if the match looks like leftover label text (mix of cases, no space = glued)
+      // e.g. "TgiLahir " → strip, "NGANJUK, " → keep
+      if (/^[A-Z]{2,}$/.test(m.trim())) return m  // all-caps → it's the city name, keep
+      return ''  // mixed case label residue → strip
+    })
     // Strip trailing noise after date — e.g. "NGANJUK 10072004 po" → keep up to date
     .replace(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}|\d{8})\s+\S.*$/, (m) => m.split(/\s+/)[0])
 

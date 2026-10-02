@@ -13,6 +13,7 @@ const STATUS_MAP = {
   kades_review: { bg: 'rgba(30,95,184,0.1)',  text: '#1e5fb8', label: 'Menunggu TTD' },
   signed:       { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Sudah Ditandatangani' },
   rejected:     { bg: 'rgba(239,68,68,0.1)',   text: '#ef4444', label: 'Ditolak' },
+  completed:    { bg: 'rgba(22,163,114,0.1)',  text: '#16a372', label: 'Sudah Ditandatangani' },
 }
 
 const FILTER_OPTIONS = [
@@ -74,7 +75,11 @@ export default function KadesRequestsPage() {
     const name = (r.profiles?.full_name ?? '').toLowerCase()
     const label = (SERVICE_TYPE_LABELS[r.service_type] ?? '').toLowerCase()
     const matchSearch = q === '' || r.id.toLowerCase().includes(q) || name.includes(q) || label.includes(q)
-    const matchStatus = statusFilter === 'semua' || r.status === statusFilter
+    // Filter "Sudah Ditandatangani" mencakup signed (belum diproses admin) dan
+    // completed (sudah diproses admin) — keduanya adalah TTD dari perspektif Kades.
+    const matchStatus = statusFilter === 'semua'
+      || (statusFilter === 'signed' && (r.status === 'signed' || r.status === 'completed'))
+      || (statusFilter !== 'signed' && r.status === statusFilter)
     return matchSearch && matchStatus
   })
 
