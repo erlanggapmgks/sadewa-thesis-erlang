@@ -349,5 +349,89 @@ CREATE TRIGGER auto_confirm_email_on_create
 */
 
 -- ────────────────────────────────────────────────────────────
+-- 10. FITUR HAPUS PENGAJUAN — per-peran
+--
+--     Semantik "hapus" berbeda per peran:
+--       • Warga  : menyembunyikan dari riwayatnya sendiri (soft delete).
+--                  Admin & kades TETAP melihat datanya.
+--       • Kades  : menyembunyikan dari daftarnya sendiri (soft delete).
+--                  Warga & admin TETAP melihat datanya.
+--       • Admin  : menghapus PERMANEN dari database (hard delete) — satu-
+--                  satunya peran yang berhak menghapus arsip.
+--
+--     Semua aksi hanya berlaku untuk pengajuan berstatus final
+--     (completed / signed / approved / rejected).
+--
+--     Soft delete memakai dua kolom penanda + RPC SECURITY DEFINER agar
+--     warga/kades tidak perlu diberi izin UPDATE umum ke tabel.
+-- ────────────────────────────────────────────────────────────
+
+-- 10a. Kolom penanda "disembunyikan" per peran
+ALTER TABLE public.service_requests
+  ADD COLUMN IF NOT EXISTS hidden_for_citizen BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS hidden_for_kades   BOOLEAN NOT NULL DEFAULT false;
+
+-- 10b. RPC: warga menyembunyikan pengajuan MILIKNYA SENDIRI yang sudah final.
+--      Mengembalikan jumlah baris yang tersembunyi (0 = tidak ada yang cocok).
+CREATE OR REPLACE FUNCTION public.hide_requests_for_citizen(ids UUID[])
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  affected INTEGER;
+BEGIN
+  UPDATE public.service_requests
+  SET hidden_for_citizen = true
+  WHERE id = ANY(ids)
+    AND user_id = auth.uid()
+    AND status IN ('completed', 'signed', 'approved', 'rejected');
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  RETURN affected;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.hide_requests_for_citizen(UUID[]) TO authenticated;
+
+-- 10c. RPC: kades menyembunyikan pengajuan final dari daftarnya.
+--      Hanya boleh dipanggil oleh user ber-role kepala_desa.
+CREATE OR REPLACE FUNCTION public.hide_requests_for_kades(ids UUID[])
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  affected INTEGER;
+BEGIN
+  IF public.get_my_role() <> 'kepala_desa' THEN
+    RAISE EXCEPTION 'Hanya kepala desa yang dapat menyembunyikan pengajuan dari daftar kades.';
+  END IF;
+  UPDATE public.service_requests
+  SET hidden_for_kades = true
+  WHERE id = ANY(ids)
+    AND status IN ('completed', 'signed', 'approved', 'rejected');
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  RETURN affected;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.hide_requests_for_kades(UUID[]) TO authenticated;
+
+-- 10d. HARD DELETE — hanya admin, dan hanya pengajuan berstatus final.
+--      extracted_documents ikut terhapus otomatis (FK ON DELETE CASCADE).
+DROP POLICY IF EXISTS "citizen_delete_own_request" ON public.service_requests;
+DROP POLICY IF EXISTS "kades_delete_request"       ON public.service_requests;
+DROP POLICY IF EXISTS "admin_delete_request"       ON public.service_requests;
+
+CREATE POLICY "admin_delete_request" ON public.service_requests
+  FOR DELETE USING (
+    public.get_my_role() = 'admin'
+    AND status IN ('completed', 'signed', 'approved', 'rejected')
+  );
+
+
+-- ────────────────────────────────────────────────────────────
 -- SELESAI
 -- ────────────────────────────────────────────────────────────

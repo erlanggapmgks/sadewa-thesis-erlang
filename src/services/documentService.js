@@ -37,6 +37,7 @@ export async function getMyRequests(userId) {
     .from('service_requests')
     .select('*')
     .eq('user_id', userId)
+    .eq('hidden_for_citizen', false) // sembunyikan yang sudah "dihapus" warga
     .order('created_at', { ascending: false })
   if (error) return []
   return data
@@ -85,11 +86,77 @@ export async function updateRequestStatus(requestId, status, adminNotes, reviewe
   return { ok: true, request: data }
 }
 
+// ── Hapus pengajuan — semantik per peran (lihat supabase/schema.sql §10) ────────
+//
+//  • Warga & Kades  : SOFT DELETE — hanya menyembunyikan dari daftar peran itu
+//                     via RPC (kolom hidden_for_citizen / hidden_for_kades).
+//  • Admin          : HARD DELETE — menghapus baris permanen dari database.
+
+const RLS_DELETE_HINT =
+  'Tidak ada data yang terhapus. Kemungkinan izin hapus (RLS policy) belum diatur di Supabase (lihat schema.sql §10).'
+
+// ── Admin: hard delete permanen ─────────────────────────────────────────────────
+
+export async function deleteRequest(requestId) {
+  // extracted_documents punya ON DELETE CASCADE, jadi akan ikut terhapus saat
+  // request dihapus. Kita minta .select() agar tahu apakah baris BENAR terhapus:
+  // kalau RLS memblokir, Supabase tidak error tapi mengembalikan 0 baris.
+  const { data, error } = await supabase
+    .from('service_requests')
+    .delete()
+    .eq('id', requestId)
+    .select('id')
+  if (error) return { ok: false, message: error.message }
+  if (!data || data.length === 0) return { ok: false, message: RLS_DELETE_HINT }
+  return { ok: true, deleted: data.length }
+}
+
+export async function deleteRequests(ids) {
+  if (!ids || ids.length === 0) return { ok: true, deleted: 0 }
+  const { data, error } = await supabase
+    .from('service_requests')
+    .delete()
+    .in('id', ids)
+    .select('id')
+  if (error) return { ok: false, message: error.message }
+  if (!data || data.length === 0) return { ok: false, message: RLS_DELETE_HINT }
+  return { ok: true, deleted: data.length }
+}
+
+// ── Warga: soft delete (sembunyikan dari riwayat sendiri) ────────────────────────
+
+export async function hideRequestsForCitizen(ids) {
+  if (!ids || ids.length === 0) return { ok: true, affected: 0 }
+  const { data, error } = await supabase.rpc('hide_requests_for_citizen', { ids })
+  if (error) return { ok: false, message: error.message }
+  if (!data || data === 0) return { ok: false, message: RLS_DELETE_HINT }
+  return { ok: true, affected: data }
+}
+
+export async function hideRequestForCitizen(requestId) {
+  return hideRequestsForCitizen([requestId])
+}
+
+// ── Kades: soft delete (sembunyikan dari daftar kades) ───────────────────────────
+
+export async function hideRequestsForKades(ids) {
+  if (!ids || ids.length === 0) return { ok: true, affected: 0 }
+  const { data, error } = await supabase.rpc('hide_requests_for_kades', { ids })
+  if (error) return { ok: false, message: error.message }
+  if (!data || data === 0) return { ok: false, message: RLS_DELETE_HINT }
+  return { ok: true, affected: data }
+}
+
+export async function hideRequestForKades(requestId) {
+  return hideRequestsForKades([requestId])
+}
+
 export async function getKadesRequests() {
   const { data, error } = await supabase
     .from('service_requests')
     .select('*, profiles!user_id(full_name, email, nik)')
     .in('status', ['kades_review', 'signed', 'rejected', 'completed'])
+    .eq('hidden_for_kades', false) // sembunyikan yang sudah "dihapus" kades
     .order('created_at', { ascending: false })
   if (error) return []
   return data

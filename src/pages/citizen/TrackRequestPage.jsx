@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuthContext } from '../../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase'
-import { getMyRequests } from '../../services/documentService'
+import { getMyRequests, hideRequestForCitizen, hideRequestsForCitizen } from '../../services/documentService'
 import { formatDate } from '../../utils/formatDate'
 import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 import { ROUTES } from '../../routes/routes'
@@ -29,6 +29,10 @@ const FILTER_OPTIONS = [
   { value: 'rejected',     label: 'Ditolak' },
   { value: 'completed',    label: 'Surat Tersedia' },
 ]
+
+// Pengajuan hanya bisa dihapus jika sudah berada di status final:
+// berhasil (completed/signed/approved) atau ditolak (rejected).
+const DELETABLE_STATUSES = ['completed', 'signed', 'approved', 'rejected']
 
 const DEMO_REQUESTS = [
   { id: 'demo-001', service_type: 'sktm',      status: 'completed', created_at: '2026-06-20T10:00:00Z' },
@@ -60,6 +64,72 @@ function DownloadIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
     </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+    </svg>
+  )
+}
+
+// ── Checkbox ───────────────────────────────────────────────────────────────────
+
+function Checkbox({ checked, indeterminate, onChange, ariaLabel }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = Boolean(indeterminate) && !checked
+  }, [indeterminate, checked])
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      aria-label={ariaLabel}
+      className="w-4 h-4 rounded border-[#d1d5db] text-[#1e5fb8] cursor-pointer accent-[#1e5fb8]"
+    />
+  )
+}
+
+// ── Delete confirmation modal ──────────────────────────────────────────────────
+
+function DeleteConfirmModal({ open, onCancel, onConfirm, deleting, count = 1 }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+      <div className="w-full max-w-[400px] bg-white rounded-xl p-6" style={CARD_SHADOW}>
+        <h3 className="font-medium text-[18px] text-[#1a1a1a] tracking-[-0.5px]">
+          {count > 1 ? `Hapus ${count} Permohonan?` : 'Hapus Permohonan?'}
+        </h3>
+        <p className="mt-2 text-[14px] leading-6 text-[#6b7280]">
+          {count > 1
+            ? `${count} permohonan terpilih akan dihapus dari riwayat Anda secara permanen. Tindakan ini tidak dapat dibatalkan.`
+            : 'Permohonan ini akan dihapus dari riwayat Anda secara permanen. Tindakan ini tidak dapat dibatalkan.'}
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={deleting}
+            className="h-10 px-4 rounded-lg text-[14px] font-medium text-[#1a1a1a] bg-white border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors cursor-pointer disabled:opacity-60"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="h-10 px-4 rounded-lg text-[14px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 disabled:opacity-60"
+            style={{ background: '#ef4444' }}
+          >
+            {deleting ? 'Menghapus...' : 'Hapus'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -96,6 +166,47 @@ export default function TrackRequestPage() {
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
   const [statusFilter, setStatusFilter] = useState('semua')
+  const [selected, setSelected]       = useState(() => new Set()) // ids tercentang
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting]       = useState(false)
+
+  function toggleOne(id) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function handleConfirmDelete() {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    setDeleting(true)
+
+    if (!supabase || !user) {
+      // Demo mode: drop from sessionStorage-backed list too.
+      const stored = JSON.parse(sessionStorage.getItem('sadewa_demo_requests') ?? '[]')
+      const next = stored.filter(r => !selected.has(r.id))
+      sessionStorage.setItem('sadewa_demo_requests', JSON.stringify(next))
+      setRequests(prev => prev.filter(r => !selected.has(r.id)))
+      setDeleting(false)
+      setConfirmOpen(false)
+      setSelected(new Set())
+      return
+    }
+
+    // Warga: soft delete — sembunyikan dari riwayat sendiri (admin/kades tetap melihat).
+    const res = ids.length === 1 ? await hideRequestForCitizen(ids[0]) : await hideRequestsForCitizen(ids)
+    setDeleting(false)
+    if (res.ok) {
+      setRequests(prev => prev.filter(r => !selected.has(r.id)))
+      setConfirmOpen(false)
+      setSelected(new Set())
+    } else {
+      alert(`Gagal menghapus permohonan: ${res.message}`)
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -119,6 +230,24 @@ export default function TrackRequestPage() {
     const matchStatus = statusFilter === 'semua' || r.status === statusFilter
     return matchSearch && matchStatus
   })
+
+  // Baris yang bisa dihapus pada daftar terfilter saat ini.
+  const deletableFiltered = filtered.filter(r => DELETABLE_STATUSES.includes(r.status))
+  const selectedCount = selected.size
+  const allSelected = deletableFiltered.length > 0 && deletableFiltered.every(r => selected.has(r.id))
+  const someSelected = deletableFiltered.some(r => selected.has(r.id))
+
+  function toggleAll() {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (allSelected) {
+        deletableFiltered.forEach(r => next.delete(r.id))
+      } else {
+        deletableFiltered.forEach(r => next.add(r.id))
+      }
+      return next
+    })
+  }
 
   return (
     <div>
@@ -160,11 +289,35 @@ export default function TrackRequestPage() {
 
         {/* Table */}
         <div className="mt-6 bg-white border border-[#e5e7eb] rounded-lg overflow-hidden" style={CARD_SHADOW}>
-          <div className="px-6 py-5 border-b border-[#e5e7eb]">
-            <h2 className="font-medium text-[18px] text-[#1a1a1a] leading-[18px] tracking-[-0.89px]">
-              Riwayat Permohonan
-            </h2>
-          </div>
+          {selectedCount > 0 ? (
+            <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between gap-3" style={{ background: '#fef2f2' }}>
+              <span className="text-[14px] font-medium text-[#1a1a1a]">{selectedCount} permohonan terpilih</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="h-9 px-3 rounded-lg text-[13px] font-medium text-[#1a1a1a] bg-white border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors cursor-pointer"
+                >
+                  Batal Pilih
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmOpen(true)}
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
+                  style={{ background: '#ef4444' }}
+                >
+                  <TrashIcon />
+                  Hapus Terpilih
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="px-6 py-5 border-b border-[#e5e7eb]">
+              <h2 className="font-medium text-[18px] text-[#1a1a1a] leading-[18px] tracking-[-0.89px]">
+                Riwayat Permohonan
+              </h2>
+            </div>
+          )}
 
           {loading ? (
             <div className="py-16 flex justify-center">
@@ -179,6 +332,14 @@ export default function TrackRequestPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#e5e7eb]">
+                      <th className="px-4 py-3 w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={toggleAll}
+                          ariaLabel="Pilih semua permohonan"
+                        />
+                      </th>
                       {['No. Permohonan', 'Layanan', 'Tanggal Ajuan', 'Status', 'Progres', 'Aksi'].map(col => (
                         <th key={col} className="px-4 py-3 text-left text-[13px] font-medium text-[#6b7280] whitespace-nowrap">
                           {col}
@@ -189,12 +350,21 @@ export default function TrackRequestPage() {
                   <tbody>
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-14 text-center text-[14px] text-[#6b7280]">
+                        <td colSpan={7} className="px-4 py-14 text-center text-[14px] text-[#6b7280]">
                           Tidak ada permohonan yang ditemukan
                         </td>
                       </tr>
                     ) : filtered.map(req => (
                       <tr key={req.id} className="border-b border-[#e5e7eb] last:border-0 hover:bg-[#fafafa] transition-colors">
+                        <td className="px-4 py-4">
+                          {DELETABLE_STATUSES.includes(req.status) && (
+                            <Checkbox
+                              checked={selected.has(req.id)}
+                              onChange={() => toggleOne(req.id)}
+                              ariaLabel={`Pilih permohonan REQ-${req.id.slice(-6).toUpperCase()}`}
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-4 text-[13px] text-[#1a1a1a] whitespace-nowrap" style={{ fontFamily: 'Menlo, monospace' }}>
                           REQ-{req.id.slice(-6).toUpperCase()}
                         </td>
@@ -207,17 +377,31 @@ export default function TrackRequestPage() {
                         <td className="px-4 py-4"><StatusBadge status={req.status} /></td>
                         <td className="px-4 py-4"><ProgressBar status={req.status} /></td>
                         <td className="px-4 py-4">
-                          {req.status === 'completed' && (
-                            <button
-                              type="button"
-                              onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
-                              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
-                              style={{ background: '#16a372' }}
-                            >
-                              <DownloadIcon />
-                              Lihat Surat
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {req.status === 'completed' && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
+                                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 whitespace-nowrap"
+                                style={{ background: '#16a372' }}
+                              >
+                                <DownloadIcon />
+                                Lihat Surat
+                              </button>
+                            )}
+                            {DELETABLE_STATUSES.includes(req.status) && (
+                              <button
+                                type="button"
+                                onClick={() => { setSelected(new Set([req.id])); setConfirmOpen(true) }}
+                                title="Hapus permohonan"
+                                aria-label="Hapus permohonan"
+                                className="flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-[#ef4444] bg-white border border-[#fecaca] hover:bg-[#fef2f2] transition-colors cursor-pointer whitespace-nowrap"
+                              >
+                                <TrashIcon />
+                                Hapus
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -230,13 +414,24 @@ export default function TrackRequestPage() {
                 ) : filtered.map(req => (
                   <div key={req.id} className="px-4 py-4 border-b border-[#f3f4f6] last:border-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="min-w-0">
-                        <p className="font-medium text-[14px] text-[#1a1a1a] truncate">
-                          {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
-                        </p>
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>
-                          REQ-{req.id.slice(-6).toUpperCase()}
-                        </p>
+                      <div className="flex items-start gap-3 min-w-0">
+                        {DELETABLE_STATUSES.includes(req.status) && (
+                          <div className="pt-0.5">
+                            <Checkbox
+                              checked={selected.has(req.id)}
+                              onChange={() => toggleOne(req.id)}
+                              ariaLabel={`Pilih permohonan REQ-${req.id.slice(-6).toUpperCase()}`}
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium text-[14px] text-[#1a1a1a] truncate">
+                            {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                          </p>
+                          <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>
+                            REQ-{req.id.slice(-6).toUpperCase()}
+                          </p>
+                        </div>
                       </div>
                       <StatusBadge status={req.status} />
                     </div>
@@ -245,17 +440,29 @@ export default function TrackRequestPage() {
                         <ProgressBar status={req.status} />
                         <p className="text-[12px] text-[#9ca3af] mt-1">{formatDate(req.created_at)}</p>
                       </div>
-                      {req.status === 'completed' && (
-                        <button
-                          type="button"
-                          onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
-                          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white cursor-pointer border-0 shrink-0"
-                          style={{ background: '#16a372' }}
-                        >
-                          <DownloadIcon />
-                          Lihat Surat
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {req.status === 'completed' && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
+                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white cursor-pointer border-0 shrink-0"
+                            style={{ background: '#16a372' }}
+                          >
+                            <DownloadIcon />
+                            Lihat Surat
+                          </button>
+                        )}
+                        {DELETABLE_STATUSES.includes(req.status) && (
+                          <button
+                            type="button"
+                            onClick={() => { setSelected(new Set([req.id])); setConfirmOpen(true) }}
+                            aria-label="Hapus permohonan"
+                            className="flex items-center justify-center h-8 w-8 rounded-lg text-[#ef4444] bg-white border border-[#fecaca] hover:bg-[#fef2f2] transition-colors cursor-pointer shrink-0"
+                          >
+                            <TrashIcon />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -264,6 +471,14 @@ export default function TrackRequestPage() {
           )}
         </div>
       </div>
+
+      <DeleteConfirmModal
+        open={confirmOpen}
+        count={selectedCount}
+        deleting={deleting}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }
