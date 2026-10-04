@@ -1,7 +1,8 @@
 import { createWorker } from 'tesseract.js'
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${API_KEY}`
+// Gemini OCR runs through our own serverless function at /api/gemini-ocr so the
+// API key stays server-side and never ships to the browser bundle.
+const OCR_ENDPOINT = '/api/gemini-ocr'
 
 // ── Tesseract OCR (fallback engine — offline, no API key needed) ─────────────
 
@@ -852,41 +853,9 @@ async function ocrWithTesseract(file) {
   }
 }
 
-// ── Gemini OCR (primary engine — requires internet + API key) ────────────────
-
-// JSON extraction approach: Gemini is told exactly which field to find for each key.
-// More robust than transcription for real KTPs — Gemini doesn't need to read all text
-// sequentially (guilloché can interrupt line-by-line reading), it jumps directly to
-// each labeled field on the card.
-const OCR_PROMPT = `Kamu adalah mesin OCR untuk KTP (Kartu Tanda Penduduk) Indonesia.
-
-Lihat gambar KTP dan ekstrak data berikut. Kembalikan HANYA JSON di bawah ini, tanpa penjelasan, tanpa markdown:
-{
-  "quality": "good",
-  "nama": "teks tepat setelah label Nama :",
-  "nik": "16 angka tepat setelah label NIK : (hapus semua spasi)",
-  "tempat_lahir": "nama kota sebelum koma pada baris Tempat/Tgl Lahir",
-  "tanggal_lahir": "tanggal lahir format DD-MM-YYYY dari baris yang sama",
-  "alamat": "nama jalan/dusun (baris Alamat), RT xxx RW xxx, Kel/Desa, Kecamatan, Kabupaten/Kota"
-}
-
-Aturan quality: "good" = semua field terbaca, "blurry" = sebagian terbaca, "bad" = bukan KTP.
-
-Panduan penting:
-- Kartu memiliki pola guilloche (tulisan "KARTU TANDA PENDUDUK" berulang diagonal) — ABAIKAN, fokus pada teks label dan nilainya
-- Pojok kanan bawah ada tanggal penerbitan dan tanda tangan — ABAIKAN, bukan tanggal lahir
-- NIK tepat 16 digit — baca satu per satu dengan teliti
-- Baris Tempat/Tgl Lahir berisi KOTA lalu TANGGAL dipisah koma: pisahkan ke dua field yang berbeda
-- Field alamat: susun SEMUA komponen dengan format lengkap berikut:
-  → Jalan/Dusun: teks dari baris Alamat (misal "DESA WATES", "JL. MERDEKA NO. 5", "DSUN KRAJAN")
-  → RT dan RW: ambil angka dari baris RT/RW, tulis "RT 002 RW 002" (3 digit, pisah spasi)
-  → Kel/Desa: nama dari baris Kel/Desa
-  → Kecamatan: nama dari baris Kecamatan
-  → Kabupaten/Kota: dari header atas kartu (baris KABUPATEN ... atau KOTA ...)
-  → Contoh hasil: "DESA WATES, RT 002 RW 002, WATES, TANJUNGANOM, NGANJUK"
-  → Contoh hasil lain: "JL. MERDEKA NO. 5, RT 001 RW 003, KARANGREJO, TULUNGAGUNG, TULUNGAGUNG"
-  → Jika baris Alamat kosong atau tidak terbaca, mulai dari RT/RW
-- Jika field tidak terbaca, isi string kosong ""`
+// ── Gemini OCR (primary engine — requires internet) ─────────────────────────
+// The prompt and Gemini request config now live in the serverless function
+// (api/gemini-ocr.js). This client only sends the image and parses the result.
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -937,49 +906,22 @@ async function ocrWithGemini(file) {
     const base64 = await fileToBase64(file)
     const mimeType = file.type || 'image/jpeg'
 
-    const res = await fetch(ENDPOINT, {
+    // Call our own serverless function instead of Google directly. The function
+    // holds the API key and forwards the request to Gemini server-side.
+    const res = await fetch(OCR_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: OCR_PROMPT }, { inline_data: { mime_type: mimeType, data: base64 } }] }],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 1024,
-          // Force valid JSON output — prevents gemini-3.6-flash from returning
-          // conversational text ("...Matches") instead of the requested JSON structure.
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              quality:       { type: 'STRING' },
-              nama:          { type: 'STRING' },
-              nik:           { type: 'STRING' },
-              tempat_lahir:  { type: 'STRING' },
-              tanggal_lahir: { type: 'STRING' },
-              alamat:        { type: 'STRING' },
-            },
-            required: ['quality', 'nama', 'nik', 'tempat_lahir', 'tanggal_lahir', 'alamat'],
-          },
-          // Disable thinking mode — thinking tokens consume the output budget and
-          // can cause JSON responses to be truncated mid-value on gemini-3.6-flash.
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
+      body: JSON.stringify({ imageBase64: base64, mimeType }),
     })
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      console.warn('[SADEWA OCR] Gemini unavailable:', err?.error?.message ?? res.status, '— falling back to Tesseract')
+      console.warn('[SADEWA OCR] Gemini proxy unavailable:', err?.error ?? res.status, '— falling back to Tesseract')
       return null
     }
 
-    const data = await res.json()
-    const finishReason = data.candidates?.[0]?.finishReason
-    // Join all parts — newer Gemini models may split response across multiple parts
-    const parts = data.candidates?.[0]?.content?.parts ?? []
-    const text = parts.map(p => p.text ?? '').join('')
-
-    console.log('[SADEWA OCR] Gemini finishReason:', finishReason, '| parts:', parts.length, '| tokens used:', data.usageMetadata?.totalTokenCount)
+    // The serverless function returns { text } — the model's raw JSON string.
+    const { text } = await res.json()
 
     if (!text) {
       console.warn('[SADEWA OCR] Gemini empty response')
@@ -1043,6 +985,10 @@ async function isOnline() {
   }
 }
 
+// navigator.onLine alone is enough to decide whether to attempt the Gemini proxy.
+// If the proxy is unreachable (no key configured, offline), ocrWithGemini returns
+// null and we fall back to Tesseract automatically.
+
 // ── Public OCR entry point ────────────────────────────────────────────────────
 // Strategy:
 //   Online  → Gemini Flash (primary)  — fast, high accuracy, requires internet
@@ -1053,10 +999,11 @@ async function isOnline() {
 
 export async function ocrDocument(file) {
   const online = await isOnline()
-  const hasKey = API_KEY && API_KEY !== 'your-gemini-api-key-here'
 
-  // 1. Gemini Flash — only when we have connectivity AND an API key.
-  if (online && hasKey) {
+  // 1. Gemini Flash (via /api/gemini-ocr) — only when we have connectivity.
+  // If the serverless proxy has no key configured, it returns an error and we
+  // fall back to Tesseract below.
+  if (online) {
     const geminiResult = await ocrWithGemini(file)
     if (geminiResult && geminiResult.quality !== 'bad') {
       console.log('[SADEWA OCR] Engine: Gemini — quality:', geminiResult.quality)
@@ -1068,7 +1015,7 @@ export async function ocrDocument(file) {
       console.log('[SADEWA OCR] Gemini call failed → falling back to Tesseract')
     }
   } else {
-    console.log(`[SADEWA OCR] Offline mode — skipping Gemini (online:${online}, hasKey:${hasKey})`)
+    console.log('[SADEWA OCR] Offline mode — skipping Gemini, using Tesseract')
   }
 
   // 2. Tesseract.js — offline fallback, all assets served locally.
