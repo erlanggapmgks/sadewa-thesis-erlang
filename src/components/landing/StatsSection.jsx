@@ -1,9 +1,6 @@
 // 4 summary stat cards that float on top of the Hero's bottom edge (pulled up via -mt-16 in LandingPage).
-// - Jumlah Penduduk: nilai statis sesuai data desa
-// - Permohonan Diproses: fetch live dari tabel service_requests (status: pending, kades_review, signed)
+// All values are static display figures for the landing page.
 
-import { useEffect, useState } from 'react'
-import { supabase } from '../../services/supabase'
 import FadeUp from '../FadeUp'
 
 function UsersIcon() {
@@ -38,19 +35,6 @@ function ClipboardIcon() {
   )
 }
 
-// Status yang dianggap "sedang diproses"
-const IN_PROGRESS_STATUSES = ['pending', 'kades_review', 'signed']
-
-async function fetchInProgressCount() {
-  if (!supabase) return null
-  const { count, error } = await supabase
-    .from('service_requests')
-    .select('id', { count: 'exact', head: true })
-    .in('status', IN_PROGRESS_STATUSES)
-  if (error) return null
-  return count
-}
-
 function StatCard({ label, value, icon, iconColor, loading = false }) {
   return (
     <article className="bg-white border border-[#e5e7eb] rounded-lg p-6 flex items-start justify-between shadow-sm">
@@ -70,22 +54,6 @@ function StatCard({ label, value, icon, iconColor, loading = false }) {
 }
 
 export default function StatsSection() {
-  const [inProgressCount, setInProgressCount] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchInProgressCount().then((count) => {
-      setInProgressCount(count)
-      setLoading(false)
-    })
-  }, [])
-
-  const displayCount = loading
-    ? null
-    : inProgressCount !== null
-      ? inProgressCount.toLocaleString('id-ID')
-      : '—'
-
   const STATS = [
     {
       label: 'Jumlah Penduduk',
@@ -96,10 +64,10 @@ export default function StatsSection() {
     },
     {
       label: 'Permohonan Diproses',
-      value: displayCount,
+      value: '120+',
       icon: <DocumentCheckIcon />,
       iconColor: 'text-[#16a372]',
-      loading: loading,
+      loading: false,
     },
     {
       label: 'Rata-rata Waktu Proses',
