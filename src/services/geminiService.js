@@ -966,28 +966,15 @@ async function ocrWithGemini(file) {
 }
 
 // ── Online/offline detection ──────────────────────────────────────────────────
-// navigator.onLine is a fast hint. For a real connectivity check we also do a
-// lightweight HEAD probe against the Gemini endpoint domain so that a captive-
-// portal or DNS failure is caught before we try to call Gemini.
+// navigator.onLine tells us whether the browser has a network connection. That's
+// enough to decide whether to attempt the Gemini proxy (/api/gemini-ocr).
+// We intentionally do NOT ping Google's domain here — the browser no longer talks
+// to Google directly, and such a ping produces a noisy 404 in the console.
+// If the proxy turns out to be unreachable (offline mid-request, no key configured
+// on the server), ocrWithGemini returns null and we fall back to Tesseract.
 async function isOnline() {
-  if (!navigator.onLine) return false
-  try {
-    // Probe with a tiny no-CORS request; if it resolves we have real internet.
-    await fetch('https://generativelanguage.googleapis.com', {
-      method: 'HEAD',
-      mode: 'no-cors',
-      cache: 'no-store',
-      signal: AbortSignal.timeout(3000),
-    })
-    return true
-  } catch {
-    return false
-  }
+  return navigator.onLine
 }
-
-// navigator.onLine alone is enough to decide whether to attempt the Gemini proxy.
-// If the proxy is unreachable (no key configured, offline), ocrWithGemini returns
-// null and we fall back to Tesseract automatically.
 
 // ── Public OCR entry point ────────────────────────────────────────────────────
 // Strategy:
