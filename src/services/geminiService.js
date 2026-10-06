@@ -898,6 +898,12 @@ function normalizeRtRw(alamat) {
   )
 }
 
+// Max time to wait for the Gemini proxy before giving up and falling back to
+// Tesseract. Covers the "internet lemot" case: a slow connection would otherwise
+// make the user wait indefinitely. 20s is enough for Gemini to finish on a normal-
+// to-slow link, but short enough to fall back promptly when the network is stuck.
+const GEMINI_TIMEOUT_MS = 20000
+
 async function ocrWithGemini(file) {
   try {
     // Send the ORIGINAL image — Gemini is a colour vision model that reads colour
@@ -908,10 +914,13 @@ async function ocrWithGemini(file) {
 
     // Call our own serverless function instead of Google directly. The function
     // holds the API key and forwards the request to Gemini server-side.
+    // AbortSignal.timeout aborts the request after GEMINI_TIMEOUT_MS so a slow or
+    // stuck connection falls back to Tesseract instead of hanging.
     const res = await fetch(OCR_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: base64, mimeType }),
+      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
     })
 
     if (!res.ok) {
@@ -960,7 +969,14 @@ async function ocrWithGemini(file) {
       tanggalLahir: selectBestDate(ocrDate, nikDate),
       alamat:       normalizeRtRw((parsed.alamat ?? '').trim()),
     }
-  } catch {
+  } catch (err) {
+    // AbortSignal.timeout throws a TimeoutError; a dropped connection throws a
+    // generic network error. Either way we return null and fall back to Tesseract.
+    if (err?.name === 'TimeoutError') {
+      console.warn(`[SADEWA OCR] Gemini timed out after ${GEMINI_TIMEOUT_MS / 1000}s — falling back to Tesseract`)
+    } else {
+      console.warn('[SADEWA OCR] Gemini request failed:', err?.message ?? err, '— falling back to Tesseract')
+    }
     return null
   }
 }
