@@ -840,6 +840,11 @@ async function ocrWithTesseract(file) {
       workerPath: `${base}tesseract/worker.min.js`,
       langPath:   `${base}tesseract/lang`,
       corePath:   `${base}tesseract/tesseract-core-lstm.wasm.js`,
+      // Our bundled .traineddata files are NOT gzipped. Without this, Tesseract.js
+      // defaults to appending ".gz" to the filename and requests ind.traineddata.gz,
+      // which doesn't exist on the server (404). Setting gzip:false makes it request
+      // the plain ind.traineddata / eng.traineddata that we actually ship.
+      gzip: false,
     })
     const { data: { text } } = await worker.recognize(url)
     await worker.terminate()
