@@ -21,8 +21,15 @@ const STATUS_MAP = {
   completed:    { bg: 'rgba(22,163,114,0.1)', text: '#16a372', label: 'Selesai' },
 }
 
+// Keys MUST match the quality values stored by the OCR layer
+// (assessKtpQuality in geminiService.js): 'good' | 'blurry' | 'bad'.
+// Legacy keys ('blurred', 'dark', 'invalid') are kept as aliases so historic
+// records still render correctly.
 const QUALITY_MAP = {
   good:    { bg: 'rgba(22,163,114,0.1)',  text: '#059669', label: 'Kualitas Baik' },
+  blurry:  { bg: 'rgba(245,158,11,0.1)',  text: '#d97706', label: 'Foto Kurang Jelas' },
+  bad:     { bg: 'rgba(239,68,68,0.1)',   text: '#dc2626', label: 'Foto Tidak Terbaca' },
+  // legacy aliases
   blurred: { bg: 'rgba(245,158,11,0.1)',  text: '#d97706', label: 'Foto Buram' },
   dark:    { bg: 'rgba(245,158,11,0.1)',  text: '#d97706', label: 'Foto Terlalu Gelap' },
   invalid: { bg: 'rgba(239,68,68,0.1)',   text: '#dc2626', label: 'Format Tidak Valid' },

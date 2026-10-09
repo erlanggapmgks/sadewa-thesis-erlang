@@ -266,11 +266,18 @@ function UploadZone({ label, file, preview, onFile, accept = 'image/*' }) {
 }
 
 function QualityBadge({ status }) {
+  // Keys MUST match the quality values produced by the OCR layer
+  // (assessKtpQuality in geminiService.js): 'good' | 'blurry' | 'bad'.
+  // Legacy keys ('blurred', 'dark', 'invalid') are kept as aliases so historic
+  // records still render correctly.
   const map = {
-    good:      { label: 'Kualitas Baik',    bg: 'rgba(22,163,114,0.1)',  color: '#059669' },
-    blurred:   { label: 'Foto Buram',        bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
-    dark:      { label: 'Foto Terlalu Gelap',bg: 'rgba(245,158,11,0.1)', color: '#d97706' },
-    invalid:   { label: 'Format Tidak Valid',bg: 'rgba(239,68,68,0.1)',   color: '#dc2626' },
+    good:      { label: 'Kualitas Baik',      bg: 'rgba(22,163,114,0.1)',  color: '#059669' },
+    blurry:    { label: 'Foto Kurang Jelas',  bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
+    bad:       { label: 'Foto Tidak Terbaca', bg: 'rgba(239,68,68,0.1)',   color: '#dc2626' },
+    // legacy aliases
+    blurred:   { label: 'Foto Buram',         bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
+    dark:      { label: 'Foto Terlalu Gelap', bg: 'rgba(245,158,11,0.1)',  color: '#d97706' },
+    invalid:   { label: 'Format Tidak Valid', bg: 'rgba(239,68,68,0.1)',   color: '#dc2626' },
   }
   const s = map[status] ?? map.good
   return (

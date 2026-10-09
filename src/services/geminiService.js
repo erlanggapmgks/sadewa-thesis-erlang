@@ -144,6 +144,106 @@ function selectBestDate(ocrDate, nikDate) {
   return nikDate || ocrDate
 }
 
+// ── Document quality assessment ──────────────────────────────────────────────
+// Judge the quality of an OCR result by validating the CONTENT of each field,
+// not merely whether a field is non-empty. A garbled read (e.g. name "PHASE TY",
+// date "2008-91-52") produces non-empty strings but is clearly unusable, so the
+// old "count non-empty fields" heuristic always returned 'good'. Here we score
+// each field as valid/invalid and derive quality from how many fields are valid.
+//
+// Returns one of: 'good' | 'blurry' | 'bad'
+//   good   → core identity fields (NIK + name + a third field) read cleanly
+//   blurry → something came through but key fields fail validation
+//   bad    → almost nothing usable was read
+function isValidNIK(nik) {
+  // A real NIK is exactly 16 digits. OCR garble yields wrong length or non-digits.
+  return typeof nik === 'string' && /^\d{16}$/.test(nik)
+}
+
+function isValidName(nama) {
+  if (typeof nama !== 'string') return false
+  const trimmed = nama.trim()
+  if (trimmed.length < 3) return false
+  // Must be dominated by letters/spaces. OCR garble injects digits and symbols.
+  const letters = (trimmed.match(/[a-zA-Z]/g) || []).length
+  const letterRatio = letters / trimmed.length
+  if (letterRatio < 0.7) return false
+  // At least one word of 3+ letters (filters "PHASE TY"-style 2-char fragments).
+  return trimmed.split(/\s+/).some(w => w.replace(/[^a-zA-Z]/g, '').length >= 3)
+}
+
+function isValidBirthDate(iso) {
+  // Expect ISO YYYY-MM-DD and a real calendar date within a plausible birth range.
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false
+  const [y, m, d] = iso.split('-').map(Number)
+  if (m < 1 || m > 12 || d < 1 || d > 31) return false
+  const dt = new Date(iso)
+  // Reject impossible dates like 2008-91-52 (Date would roll over or be invalid).
+  if (Number.isNaN(dt.getTime())) return false
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() + 1 !== m || dt.getUTCDate() !== d) return false
+  const maxBirthYear = new Date().getFullYear() - 15
+  return y >= 1920 && y <= maxBirthYear
+}
+
+function isValidAddress(alamat) {
+  if (typeof alamat !== 'string') return false
+  const trimmed = alamat.trim()
+  if (trimmed.length < 6) return false
+  const letters = (trimmed.match(/[a-zA-Z]/g) || []).length
+  return letters >= 4
+}
+
+// A field is "corrupt" when OCR produced a non-empty value that FAILS validation.
+// This is a stronger signal of a bad read than an empty field: it means the model
+// saw something there but couldn't resolve it to a sane value (e.g. date
+// "2008-91-52", a NIK that isn't 16 digits, a name full of symbols). An empty
+// field, by contrast, can simply mean that region of the card wasn't captured.
+function isNonEmpty(v) {
+  return typeof v === 'string' && v.trim().length > 0
+}
+
+function assessKtpQuality({ nik, nama, tanggalLahir, alamat }) {
+  const checks = {
+    nik:    isValidNIK(nik),
+    nama:   isValidName(nama),
+    tgl:    isValidBirthDate(tanggalLahir),
+    alamat: isValidAddress(alamat),
+  }
+  const validCount = Object.values(checks).filter(Boolean).length
+
+  // Count fields that were read but came out invalid — the garble signal.
+  const corrupt = {
+    nik:    isNonEmpty(nik)          && !checks.nik,
+    nama:   isNonEmpty(nama)         && !checks.nama,
+    tgl:    isNonEmpty(tanggalLahir) && !checks.tgl,
+    alamat: isNonEmpty(alamat)       && !checks.alamat,
+  }
+  const corruptCount = Object.values(corrupt).filter(Boolean).length
+
+  // Cross-check: a genuine NIK encodes the birth date at digits 7-12. If both the
+  // NIK and the birth date are present but disagree, at least one was misread.
+  const nikDate = checks.nik ? dateFromNIK(nik) : ''
+  const dateMismatch = checks.nik && checks.tgl && nikDate && nikDate !== tanggalLahir
+
+  // Core identity requires a clean NIK AND a clean name. Without both, the read
+  // cannot be trusted regardless of how many softer fields happened to parse.
+  const coreOk = checks.nik && checks.nama
+
+  let quality
+  if (coreOk && validCount >= 3 && corruptCount === 0 && !dateMismatch) {
+    // Everything that matters parsed cleanly and nothing contradicts.
+    quality = 'good'
+  } else if (validCount === 0) {
+    quality = 'bad'
+  } else {
+    // Something came through but the read is not fully trustworthy — flag it so a
+    // human verifies instead of silently labelling it "Kualitas Baik".
+    quality = 'blurry'
+  }
+
+  return { quality, checks, corrupt, validCount, corruptCount, dateMismatch }
+}
+
 function parseKTPText(raw) {
   // Line-by-line approach: more robust against OCR noise on KTP documents
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 1)
@@ -777,10 +877,11 @@ function parseKTPText(raw) {
     if (fallbackParts.length > 0) alamatFinal = fallbackParts.join(', ')
   }
 
-  const found = [nik, nama, alamatFinal].filter(Boolean).length
-  const quality = found >= 2 ? 'good' : found === 1 ? 'blurry' : 'bad'
+  // Quality now reflects whether the READ fields are actually valid, not just
+  // whether OCR produced some string for them. See assessKtpQuality().
+  const { quality, checks, corruptCount, dateMismatch } = assessKtpQuality({ nik, nama, tanggalLahir, alamat: alamatFinal })
 
-  console.log(`[SADEWA OCR] KTP parsed → quality:${quality} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamatFinal}`)
+  console.log(`[SADEWA OCR] KTP parsed → quality:${quality} | valid(nik:${checks.nik} nama:${checks.nama} tgl:${checks.tgl} alamat:${checks.alamat}) corrupt:${corruptCount} dateMismatch:${dateMismatch} | nik:${nik} | nama:${nama} | ttl:${tempatLahir},${tanggalLahir} | alamat:${alamatFinal}`)
   return { quality, nama, nik, tempatLahir, tanggalLahir, alamat: alamatFinal }
 }
 
@@ -966,13 +1067,23 @@ async function ocrWithGemini(file) {
 
     const ocrDate = tanggalToISO(rawTanggal)
     const nikDate = cleanNIK.length === 16 ? dateFromNIK(cleanNIK) : ''
+
+    const nama = (parsed.nama ?? '').trim()
+    const tanggalLahir = selectBestDate(ocrDate, nikDate)
+    const alamat = normalizeRtRw((parsed.alamat ?? '').trim())
+
+    // Derive quality from the validity of the fields we actually got back, rather
+    // than trusting the model's self-reported quality (which it rarely downgrades).
+    const { quality, checks } = assessKtpQuality({ nik: cleanNIK, nama, tanggalLahir, alamat })
+    console.log(`[SADEWA OCR] Gemini quality:${quality} | valid(nik:${checks.nik} nama:${checks.nama} tgl:${checks.tgl} alamat:${checks.alamat})`)
+
     return {
-      quality:      parsed.quality ?? 'good',
-      nama:         (parsed.nama ?? '').trim(),
+      quality,
+      nama,
       nik:          cleanNIK,
       tempatLahir:  rawTempat,
-      tanggalLahir: selectBestDate(ocrDate, nikDate),
-      alamat:       normalizeRtRw((parsed.alamat ?? '').trim()),
+      tanggalLahir,
+      alamat,
     }
   } catch (err) {
     // AbortSignal.timeout throws a TimeoutError; a dropped connection throws a
