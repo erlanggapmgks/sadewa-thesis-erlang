@@ -28,6 +28,7 @@ export const ROUTES = {
   ADMIN_USERS: '/admin/users',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_REPORTS: '/admin/reports',
+  ADMIN_ARCHIVE: '/admin/archive',
   ADMIN_LETTER_PRINT: '/admin/requests/:id/surat',
 
   // Kepala Desa

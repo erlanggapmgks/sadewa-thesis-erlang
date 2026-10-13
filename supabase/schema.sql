@@ -435,3 +435,199 @@ CREATE POLICY "admin_delete_request" ON public.service_requests
 -- ────────────────────────────────────────────────────────────
 -- SELESAI
 -- ────────────────────────────────────────────────────────────
+
+-- ────────────────────────────────────────────────────────────
+-- 11. ARSIP SURAT — nomor surat stabil + snapshot surat final
+--
+--     Masalah lama:
+--       • Nomor surat dihitung ulang dari ID di sisi klien
+--         (letterSerial) → bisa duplikat, tidak urut, tidak resmi.
+--       • Surat dirakit ulang dari data live → kalau template/data
+--         berubah, surat lama ikut berubah. Tidak layak untuk arsip.
+--
+--     Solusi:
+--       • letter_number  : nomor resmi, di-generate SEKALI saat surat
+--                          disahkan (signed), unik & urut per tahun+jenis.
+--       • letter_snapshot: JSONB berisi data surat persis saat disahkan,
+--                          sehingga arsip tidak berubah di kemudian hari.
+--       • RPC sign_letter: operasi atomik — set status 'signed',
+--                          catat signed_at, generate letter_number,
+--                          dan simpan snapshot sekaligus.
+--
+--     Aman dijalankan berulang kali.
+-- ────────────────────────────────────────────────────────────
+
+-- 11a. Kolom arsip di service_requests
+ALTER TABLE public.service_requests
+  ADD COLUMN IF NOT EXISTS letter_number   TEXT,
+  ADD COLUMN IF NOT EXISTS letter_snapshot JSONB;
+
+-- Nomor surat harus unik (abaikan NULL — surat belum disahkan)
+DROP INDEX IF EXISTS service_requests_letter_number_key;
+CREATE UNIQUE INDEX service_requests_letter_number_key
+  ON public.service_requests (letter_number)
+  WHERE letter_number IS NOT NULL;
+
+-- 11b. Tabel penghitung nomor urut per (tahun, jenis surat)
+--      Nomor direset otomatis tiap tahun karena key memuat tahun.
+CREATE TABLE IF NOT EXISTS public.letter_counters (
+  year         INT  NOT NULL,
+  service_type TEXT NOT NULL,
+  last_serial  INT  NOT NULL DEFAULT 0,
+  PRIMARY KEY (year, service_type)
+);
+
+ALTER TABLE public.letter_counters ENABLE ROW LEVEL SECURITY;
+-- Tidak ada policy akses langsung — hanya disentuh via RPC SECURITY DEFINER.
+
+-- 11c. Kode & prefix nomor surat per jenis (samakan dgn LetterPrintPage)
+--      Drop dulu: RETURNS TABLE tidak bisa diubah via CREATE OR REPLACE.
+DROP FUNCTION IF EXISTS public.letter_code_for(TEXT);
+CREATE OR REPLACE FUNCTION public.letter_code_for(service_type TEXT)
+RETURNS TABLE (code TEXT, prefix TEXT)
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT t.code, t.prefix FROM (VALUES
+    ('domisili',  'SKD',  '474'),
+    ('pengantar', 'SKP',  '474'),
+    ('sktm',      'SKTM', '460'),
+    ('usaha',     'SKU',  '503'),
+    ('kelahiran', 'SKL',  '474'),
+    ('kematian',  'SKMN', '474')
+  ) AS t(st, code, prefix)
+  WHERE t.st = service_type;
+$$;
+
+-- 11d. Ambil & naikkan nomor urut berikutnya untuk tahun+jenis (atomik).
+--      Mengembalikan nomor surat lengkap, mis: 460/SKTM-012/VI/2026
+CREATE OR REPLACE FUNCTION public.next_letter_number(p_service_type TEXT, p_year INT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_serial  INT;
+  v_code    TEXT;
+  v_prefix  TEXT;
+  v_roman   TEXT;
+  v_months  TEXT[] := ARRAY['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+BEGIN
+  -- Upsert penghitung lalu kunci baris agar aman dari race condition
+  INSERT INTO public.letter_counters (year, service_type, last_serial)
+  VALUES (p_year, p_service_type, 1)
+  ON CONFLICT (year, service_type)
+  DO UPDATE SET last_serial = public.letter_counters.last_serial + 1
+  RETURNING last_serial INTO v_serial;
+
+  SELECT code, prefix INTO v_code, v_prefix
+  FROM public.letter_code_for(p_service_type);
+
+  -- fallback bila jenis tak dikenal
+  v_code   := COALESCE(v_code, 'SKT');
+  v_prefix := COALESCE(v_prefix, '474');
+  v_roman  := v_months[EXTRACT(MONTH FROM now())::INT];
+
+  RETURN v_prefix || '/' || v_code || '-' || lpad(v_serial::text, 3, '0')
+         || '/' || v_roman || '/' || p_year::text;
+END;
+$$;
+
+-- 11e. RPC utama: kepala desa menandatangani surat (atomik).
+--      - Set status 'signed' + signed_at
+--      - Generate letter_number SEKALI (idempoten: kalau sudah ada, dipakai lagi)
+--      - Simpan letter_snapshot dari data terkini
+--      Mengembalikan baris service_requests yang sudah diperbarui (JSON).
+CREATE OR REPLACE FUNCTION public.sign_letter(
+  p_request_id UUID,
+  p_kades_notes TEXT,
+  p_kades_reviewer UUID,
+  p_snapshot JSONB
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_type     TEXT;
+  v_year     INT;
+  v_number   TEXT;
+  v_existing TEXT;
+  v_result   JSON;
+BEGIN
+  IF public.get_my_role() <> 'kepala_desa' THEN
+    RAISE EXCEPTION 'Hanya kepala desa yang dapat menandatangani surat.';
+  END IF;
+
+  SELECT service_type, letter_number
+    INTO v_type, v_existing
+  FROM public.service_requests
+  WHERE id = p_request_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Pengajuan tidak ditemukan: %', p_request_id;
+  END IF;
+
+  v_year := EXTRACT(YEAR FROM now())::INT;
+
+  -- Generate nomor hanya jika belum pernah dibuat (idempoten)
+  IF v_existing IS NULL THEN
+    v_number := public.next_letter_number(v_type, v_year);
+  ELSE
+    v_number := v_existing;
+  END IF;
+
+  UPDATE public.service_requests
+  SET status            = 'signed',
+      signed_at         = COALESCE(signed_at, now()),
+      kades_notes       = p_kades_notes,
+      kades_reviewed_by = p_kades_reviewer,
+      letter_number     = v_number,
+      letter_snapshot   = COALESCE(letter_snapshot, p_snapshot)
+  WHERE id = p_request_id
+  RETURNING json_build_object(
+    'id',              id,
+    'status',          status,
+    'signed_at',       signed_at,
+    'letter_number',   letter_number,
+    'letter_snapshot', letter_snapshot
+  ) INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.sign_letter(UUID, TEXT, UUID, JSONB) TO authenticated;
+
+-- 11f. Perbarui verify_letter agar ikut mengembalikan nomor surat resmi
+CREATE OR REPLACE FUNCTION public.verify_letter(letter_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result JSON;
+BEGIN
+  SELECT json_build_object(
+    'valid',         true,
+    'service_type',  sr.service_type,
+    'status',        sr.status,
+    'created_at',    sr.created_at,
+    'signed_at',     sr.signed_at,
+    'letter_number', sr.letter_number,
+    'full_name',     p.full_name
+  )
+  INTO result
+  FROM public.service_requests sr
+  LEFT JOIN public.profiles p ON p.id = sr.user_id
+  WHERE sr.id = letter_id AND sr.status = 'completed';
+
+  RETURN COALESCE(result, json_build_object('valid', false));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.verify_letter(UUID) TO anon;

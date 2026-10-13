@@ -113,7 +113,7 @@ export default function KadesRequestDetailPage() {
   async function handleAction(newStatus) {
     setSubmitting(true)
     if (supabase) {
-      await updateKadesStatus(id, newStatus, catatan, user?.id)
+      await updateKadesStatus(id, newStatus, catatan, user?.id, req)
     } else {
       await new Promise(r => setTimeout(r, 600))
     }

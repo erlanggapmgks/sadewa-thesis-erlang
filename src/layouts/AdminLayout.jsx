@@ -78,6 +78,13 @@ function WalkInIcon() {
     </svg>
   )
 }
+function ArchiveIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+    </svg>
+  )
+}
 function ReportIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -111,6 +118,7 @@ function CloseIcon() {
 const NAV_ITEMS = [
   { label: 'Dashboard',          Icon: DashboardIcon,  to: ROUTES.ADMIN_DASHBOARD },
   { label: 'Kelola Pengajuan',   Icon: DocumentIcon,   to: ROUTES.ADMIN_REQUESTS },
+  { label: 'Arsip Surat',        Icon: ArchiveIcon,    to: ROUTES.ADMIN_ARCHIVE },
   { label: 'Pengajuan Langsung', Icon: WalkInIcon,     to: ROUTES.ADMIN_WALK_IN },
   { label: 'Data Warga',         Icon: UsersGroupIcon, to: ROUTES.ADMIN_CITIZENS },
   { label: 'Kelola Pengguna',    Icon: UsersIcon,      to: ROUTES.ADMIN_USERS },

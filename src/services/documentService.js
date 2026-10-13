@@ -151,6 +151,28 @@ export async function hideRequestForKades(requestId) {
   return hideRequestsForKades([requestId])
 }
 
+// ── Arsip surat: ambil surat yang sudah resmi (punya nomor surat) ───────────────
+//
+// Arsip hanya memuat surat yang sudah ditandatangani kepala desa — yaitu surat
+// berstatus 'signed' atau 'completed' dan sudah punya letter_number. Diurutkan
+// dari yang terbaru.
+export async function getArchivedLetters(filters = {}) {
+  let query = supabase
+    .from('service_requests')
+    .select('*, profiles!user_id(full_name, email, nik)')
+    .in('status', ['signed', 'completed'])
+    .not('letter_number', 'is', null)
+    .order('signed_at', { ascending: false, nullsFirst: false })
+
+  if (filters.serviceType && filters.serviceType !== 'semua') {
+    query = query.eq('service_type', filters.serviceType)
+  }
+
+  const { data, error } = await query
+  if (error) return []
+  return data
+}
+
 export async function getKadesRequests() {
   const { data, error } = await supabase
     .from('service_requests')
@@ -162,12 +184,53 @@ export async function getKadesRequests() {
   return data
 }
 
-export async function updateKadesStatus(requestId, status, kadesNotes, kadesReviewerId) {
+// ── Arsip surat: snapshot data surat saat disahkan ──────────────────────────────
+//
+// Snapshot adalah "foto" isi surat pada saat kepala desa menandatangani, agar
+// arsip tidak ikut berubah bila template atau data warga diubah di kemudian hari.
+// Dibangun dari sumber yang sama dengan LetterPrintPage (profiles + extracted +
+// additional_data) supaya konsisten.
+
+export function buildLetterSnapshot(req) {
+  if (!req) return null
+  const ext = req.extracted_documents?.[0] ?? null
+  return {
+    service_type:    req.service_type,
+    purpose:         req.purpose ?? null,
+    full_name:       ext?.full_name  ?? req.profiles?.full_name ?? null,
+    nik:             ext?.nik        ?? req.profiles?.nik       ?? null,
+    birth_date:      ext?.birth_date ?? null,
+    address:         ext?.address    ?? null,
+    additional_data: req.additional_data ?? null,
+    snapshot_at:     new Date().toISOString(),
+  }
+}
+
+// Kepala desa menandatangani surat — atomik via RPC sign_letter:
+// set status 'signed', catat signed_at, generate letter_number (sekali),
+// dan simpan letter_snapshot. `req` dipakai untuk membangun snapshot.
+export async function signLetter(requestId, kadesNotes, kadesReviewerId, req) {
+  const snapshot = buildLetterSnapshot(req)
+  const { data, error } = await supabase.rpc('sign_letter', {
+    p_request_id:    requestId,
+    p_kades_notes:   kadesNotes,
+    p_kades_reviewer: kadesReviewerId,
+    p_snapshot:      snapshot,
+  })
+  if (error) return { ok: false, message: error.message }
+  return { ok: true, request: data }
+}
+
+export async function updateKadesStatus(requestId, status, kadesNotes, kadesReviewerId, req = null) {
+  // Penandatanganan punya efek samping (nomor surat + snapshot) → lewat RPC khusus.
+  if (status === 'signed') {
+    return signLetter(requestId, kadesNotes, kadesReviewerId, req)
+  }
+
   const updates = {
     status,
     kades_notes: kadesNotes,
     kades_reviewed_by: kadesReviewerId,
-    ...(status === 'signed' ? { signed_at: new Date().toISOString() } : {}),
   }
   const { data, error } = await supabase
     .from('service_requests')

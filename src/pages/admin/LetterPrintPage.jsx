@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { supabase } from '../../services/supabase'
 import { getRequestById, updateRequestStatus } from '../../services/documentService'
@@ -79,6 +79,8 @@ const DEMO_REQUEST = {
 export default function LetterPrintPage() {
   const { id }     = useParams()
   const navigate   = useNavigate()
+  const [searchParams] = useSearchParams()
+  const autoPrint  = searchParams.get('print') === '1'
   const { user, role } = useAuthContext()
   const isAdmin    = role === ROLES.ADMIN
 
@@ -102,6 +104,15 @@ export default function LetterPrintPage() {
     }
     load()
   }, [id])
+
+  // Auto-buka dialog cetak bila dibuka dari Arsip dengan ?print=1.
+  // Sedikit jeda agar logo & tanda tangan sempat termuat sebelum render cetak.
+  useEffect(() => {
+    if (!loading && autoPrint) {
+      const t = setTimeout(() => window.print(), 600)
+      return () => clearTimeout(t)
+    }
+  }, [loading, autoPrint])
 
   const verifyUrl = `${window.location.origin}/verify/${id}`
 
@@ -131,19 +142,25 @@ export default function LetterPrintPage() {
   if (!req) return null
 
   const config    = getConfig(req.service_type)
+
+  // Arsip: jika surat sudah disahkan, pakai snapshot (data beku saat TTD) agar
+  // tampilan arsip tidak berubah meski data/template diubah di kemudian hari.
+  const snap      = req.letter_snapshot ?? null
   const ext       = req.extracted_documents?.[0] ?? null
-  const name      = ext?.full_name  ?? req.profiles?.full_name ?? '—'
-  const nik       = ext?.nik        ?? req.profiles?.nik       ?? '—'
-  const birthDate = ext?.birth_date ?? '—'
-  const address   = ext?.address    ?? '—'
+  const name      = snap?.full_name  ?? ext?.full_name  ?? req.profiles?.full_name ?? '—'
+  const nik       = snap?.nik        ?? ext?.nik        ?? req.profiles?.nik       ?? '—'
+  const birthDate = snap?.birth_date ?? ext?.birth_date ?? '—'
+  const address   = snap?.address    ?? ext?.address    ?? '—'
 
   const d      = new Date(req.created_at)
   const roman  = ROMAN_MONTHS[d.getMonth()]
   const year   = d.getFullYear()
+  // Nomor surat resmi dari arsip bila sudah disahkan; fallback ke perhitungan lama
+  // (hanya untuk preview surat yang belum ditandatangani / mode demo).
   const serial = letterSerial(id)
-  const letterNo = `${config.prefix}/${config.code}-${serial}/${roman}/${year}`
+  const letterNo = req.letter_number ?? `${config.prefix}/${config.code}-${serial}/${roman}/${year}`
 
-  const addData = req.additional_data ?? {}
+  const addData = snap?.additional_data ?? req.additional_data ?? {}
 
   const dataRows = (() => {
     const base = [

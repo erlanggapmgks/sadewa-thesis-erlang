@@ -36,6 +36,7 @@ import AdminCitizens from '../pages/admin/CitizensPage'
 import AdminUsers from '../pages/admin/ManageUsersPage'
 import AdminSettings from '../pages/admin/SettingsPage'
 import AdminReports from '../pages/admin/ReportingPage'
+import AdminArchive from '../pages/admin/ArchivePage'
 import LetterPrintPage from '../pages/admin/LetterPrintPage'
 
 // Misc
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.ADMIN_USERS, element: <AdminUsers /> },
       { path: ROUTES.ADMIN_SETTINGS, element: <AdminSettings /> },
       { path: ROUTES.ADMIN_REPORTS,  element: <AdminReports /> },
+      { path: ROUTES.ADMIN_ARCHIVE,  element: <AdminArchive /> },
     ],
   },
 
