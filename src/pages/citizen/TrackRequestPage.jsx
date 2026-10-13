@@ -408,64 +408,92 @@ export default function TrackRequestPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="md:hidden">
+              <div className="md:hidden p-3 space-y-3">
                 {filtered.length === 0 ? (
-                  <p className="px-4 py-14 text-center text-[14px] text-[#6b7280]">Tidak ada permohonan yang ditemukan</p>
-                ) : filtered.map(req => (
-                  <div key={req.id} className="px-4 py-4 border-b border-[#f3f4f6] last:border-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-start gap-3 min-w-0">
-                        {DELETABLE_STATUSES.includes(req.status) && (
-                          <div className="pt-0.5">
-                            <Checkbox
-                              checked={selected.has(req.id)}
-                              onChange={() => toggleOne(req.id)}
-                              ariaLabel={`Pilih permohonan REQ-${req.id.slice(-6).toUpperCase()}`}
-                            />
+                  <p className="py-14 text-center text-[14px] text-[#6b7280]">Tidak ada permohonan yang ditemukan</p>
+                ) : filtered.map(req => {
+                  const s = STATUS_MAP[req.status] ?? STATUS_MAP.pending
+                  const deletable = DELETABLE_STATUSES.includes(req.status)
+                  const isSelected = selected.has(req.id)
+                  return (
+                    <div
+                      key={req.id}
+                      className="rounded-xl border bg-white p-4 transition-colors"
+                      style={{
+                        borderColor: isSelected ? '#1e5fb8' : '#e5e7eb',
+                        boxShadow: isSelected ? '0 0 0 1px #1e5fb8' : '0px 1px 1.5px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {/* Header: checkbox + title + status */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          {deletable && (
+                            <div className="pt-0.5 shrink-0">
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={() => toggleOne(req.id)}
+                                ariaLabel={`Pilih permohonan REQ-${req.id.slice(-6).toUpperCase()}`}
+                              />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[15px] leading-tight text-[#1a1a1a]">
+                              {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                            </p>
+                            <p className="text-[11px] tracking-wide text-[#9ca3af] mt-1" style={{ fontFamily: 'Menlo, monospace' }}>
+                              REQ-{req.id.slice(-6).toUpperCase()}
+                            </p>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-medium text-[14px] text-[#1a1a1a] truncate">
-                            {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
-                          </p>
-                          <p className="text-[11px] text-[#9ca3af] mt-0.5" style={{ fontFamily: 'Menlo, monospace' }}>
-                            REQ-{req.id.slice(-6).toUpperCase()}
-                          </p>
+                        </div>
+                        <StatusBadge status={req.status} />
+                      </div>
+
+                      {/* Progress */}
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[12px] font-medium text-[#6b7280]">Progres</span>
+                          <span className="text-[12px] font-semibold" style={{ color: s.bar }}>{s.progress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-[#f3f4f6] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${s.progress}%`, background: s.bar }} />
                         </div>
                       </div>
-                      <StatusBadge status={req.status} />
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <ProgressBar status={req.status} />
-                        <p className="text-[12px] text-[#9ca3af] mt-1">{formatDate(req.created_at)}</p>
+
+                      {/* Footer: date + actions */}
+                      <div className="mt-4 pt-3 border-t border-[#f3f4f6] flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-[12px] text-[#9ca3af] min-w-0">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true" className="shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                          </svg>
+                          <span className="truncate">{formatDate(req.created_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {req.status === 'completed' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
+                              className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-medium text-white hover:opacity-90 transition-opacity cursor-pointer border-0 shrink-0"
+                              style={{ background: '#16a372' }}
+                            >
+                              <DownloadIcon />
+                              Lihat Surat
+                            </button>
+                          )}
+                          {deletable && (
+                            <button
+                              type="button"
+                              onClick={() => { setSelected(new Set([req.id])); setConfirmOpen(true) }}
+                              aria-label="Hapus permohonan"
+                              className="flex items-center justify-center h-9 w-9 rounded-lg text-[#ef4444] bg-white border border-[#fecaca] hover:bg-[#fef2f2] transition-colors cursor-pointer shrink-0"
+                            >
+                              <TrashIcon />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {req.status === 'completed' && (
-                          <button
-                            type="button"
-                            onClick={() => navigate(ROUTES.CITIZEN_LETTER_VIEW.replace(':id', req.id))}
-                            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium text-white cursor-pointer border-0 shrink-0"
-                            style={{ background: '#16a372' }}
-                          >
-                            <DownloadIcon />
-                            Lihat Surat
-                          </button>
-                        )}
-                        {DELETABLE_STATUSES.includes(req.status) && (
-                          <button
-                            type="button"
-                            onClick={() => { setSelected(new Set([req.id])); setConfirmOpen(true) }}
-                            aria-label="Hapus permohonan"
-                            className="flex items-center justify-center h-8 w-8 rounded-lg text-[#ef4444] bg-white border border-[#fecaca] hover:bg-[#fef2f2] transition-colors cursor-pointer shrink-0"
-                          >
-                            <TrashIcon />
-                          </button>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}

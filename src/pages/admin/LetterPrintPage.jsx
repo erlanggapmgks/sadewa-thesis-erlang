@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import QRCode from 'react-qr-code'
 import { supabase } from '../../services/supabase'
@@ -89,6 +89,26 @@ export default function LetterPrintPage() {
   const [sending, setSending]   = useState(false)
   const [sent, setSent]         = useState(false)
   const [ttdUrl, setTtdUrl]     = useState(null)
+
+  // Skala tampilan layar: kertas A4 (210mm) dikecilkan agar muat di lebar
+  // viewport sempit (mobile) tanpa mengubah ukuran cetak PDF.
+  const wrapRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    function recompute() {
+      const el = wrapRef.current
+      if (!el) return
+      // Lebar kertas A4 dalam px pada 96dpi (210mm ≈ 793.7px).
+      const PAPER_PX = (210 / 25.4) * 96
+      // Sisakan sedikit padding horizontal pada container.
+      const available = el.clientWidth - 16
+      const next = available < PAPER_PX ? available / PAPER_PX : 1
+      setScale(next)
+    }
+    recompute()
+    window.addEventListener('resize', recompute)
+    return () => window.removeEventListener('resize', recompute)
+  }, [loading])
 
   useEffect(() => {
     async function load() {
@@ -215,61 +235,71 @@ export default function LetterPrintPage() {
         @media print {
           .no-print { display: none !important; }
           body { margin: 0; background: white; }
-          .letter-wrap { background: white !important; padding: 0 !important; min-height: unset !important; }
-          .letter-paper { box-shadow: none !important; margin: 0 !important; max-width: 100% !important; padding: 15mm 20mm 20mm !important; box-sizing: border-box !important; min-height: unset !important; height: auto !important; }
+          .letter-wrap { background: white !important; padding: 0 !important; min-height: unset !important; overflow: visible !important; }
+          .letter-sizer { width: 100% !important; height: auto !important; margin: 0 !important; }
+          .letter-scale { transform: none !important; width: 100% !important; margin: 0 !important; }
+          .letter-paper { box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; padding: 15mm 20mm 20mm !important; box-sizing: border-box !important; min-height: unset !important; height: auto !important; }
         }
       `}</style>
 
       {/* Screen header */}
       <div
-        className="no-print sticky top-0 z-10 bg-white border-b border-[#e5e7eb] px-6 py-3 flex items-center justify-between gap-4"
+        className="no-print sticky top-0 z-10 bg-white border-b border-[#e5e7eb] px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4"
         style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
       >
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[14px] font-medium text-[#6b7280] hover:text-[#1a1a1a] transition-colors cursor-pointer border-0 bg-transparent p-0"
+          className="flex items-center gap-2 text-[14px] font-medium text-[#6b7280] hover:text-[#1a1a1a] transition-colors cursor-pointer border-0 bg-transparent p-0 shrink-0"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
           </svg>
-          Kembali
+          <span className="hidden sm:inline">Kembali</span>
         </button>
 
-        <p className="font-medium text-[15px] text-[#1a1a1a]">Preview Surat — {letterNo}</p>
+        {/* Judul: sembunyi di layar sangat kecil, truncate di tengah */}
+        <div className="min-w-0 flex-1 text-center px-1">
+          <p className="font-medium text-[13px] sm:text-[15px] text-[#1a1a1a] truncate">
+            <span className="hidden sm:inline">Preview Surat — </span>{letterNo}
+          </p>
+        </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity"
+            title="Cetak / Unduh PDF"
+            className="flex items-center justify-center gap-2 h-9 w-9 sm:w-auto sm:px-4 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity shrink-0"
             style={{ background: '#1e5fb8' }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
             </svg>
-            Cetak / Unduh PDF
+            <span className="hidden sm:inline">Cetak / Unduh PDF</span>
           </button>
 
           {/* Tombol kirim ke warga — hanya muncul untuk admin dan belum dikirim */}
           {isAdmin && (
             sent ? (
-              <div className="flex items-center gap-2 h-9 px-4 rounded-lg text-[14px] font-medium"
+              <div className="flex items-center justify-center gap-2 h-9 w-9 sm:w-auto sm:px-4 rounded-lg text-[14px] font-medium shrink-0"
+                title="Sudah Dikirim ke Warga"
                 style={{ background: 'rgba(22,163,114,0.1)', color: '#16a372' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
-                Sudah Dikirim ke Warga
+                <span className="hidden sm:inline">Sudah Dikirim ke Warga</span>
               </div>
             ) : (
               <button
                 onClick={handleSendToWarga}
                 disabled={sending}
-                className="flex items-center gap-2 h-9 px-4 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-60"
+                title="Kirim ke Warga"
+                className="flex items-center justify-center gap-2 h-9 w-9 sm:w-auto sm:px-4 rounded-lg text-[14px] font-medium text-white cursor-pointer border-0 hover:opacity-90 transition-opacity disabled:opacity-60 shrink-0"
                 style={{ background: '#16a372' }}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="shrink-0">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                 </svg>
-                {sending ? 'Mengirim...' : 'Kirim ke Warga'}
+                <span className="hidden sm:inline">{sending ? 'Mengirim...' : 'Kirim ke Warga'}</span>
               </button>
             )
           )}
@@ -277,10 +307,29 @@ export default function LetterPrintPage() {
       </div>
 
       {/* Letter area */}
-      <div className="letter-wrap min-h-screen py-10" style={{ background: '#d1d5db' }}>
+      <div ref={wrapRef} className="letter-wrap min-h-screen py-4 sm:py-10 px-2 sm:px-0 overflow-hidden" style={{ background: '#d1d5db' }}>
+        {/* Pembungkus skala (sizer): lebarnya mengikuti ukuran kertas setelah
+            diperkecil, sehingga mx-auto dapat menengahkan kertas yang terlihat
+            dan tinggi layout tetap benar. */}
         <div
-          className="letter-paper mx-auto bg-white"
+          className="letter-sizer mx-auto"
           style={{
+            width: scale < 1 ? `calc(210mm * ${scale})` : '210mm',
+            height: scale < 1 ? `calc(297mm * ${scale})` : undefined,
+          }}
+        >
+        <div
+          className="letter-scale"
+          style={{
+            width: '210mm',
+            transform: scale < 1 ? `scale(${scale})` : undefined,
+            transformOrigin: 'top left',
+          }}
+        >
+        <div
+          className="letter-paper bg-white"
+          style={{
+            width: '210mm',
             maxWidth: '210mm',
             minHeight: '297mm',
             padding: '18mm 22mm 24mm',
@@ -407,6 +456,8 @@ export default function LetterPrintPage() {
               <p style={{ marginTop: '3px' }}>Kepala Desa Wates</p>
             </div>
           </div>
+        </div>
+        </div>
         </div>
       </div>
     </>
