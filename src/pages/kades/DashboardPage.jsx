@@ -4,6 +4,7 @@ import { ROUTES } from '../../routes/routes'
 import { supabase } from '../../services/supabase'
 import { getKadesRequests } from '../../services/documentService'
 import { useAuthContext } from '../../context/AuthContext'
+import { SERVICE_TYPE_LABELS } from '../../utils/constants'
 
 const HERO_GRADIENT = '#1e5fb8'
 const CARD_SHADOW = { boxShadow: '0px 1px 1.5px rgba(0,0,0,0.1), 0px 1px 1px rgba(0,0,0,0.1)' }
@@ -94,19 +95,20 @@ export default function KadesDashboardPage() {
           ) : (
             <div className="divide-y divide-[#f3f4f6]">
               {recent.map(req => (
-                <div key={req.id} className="px-6 py-4 flex items-center justify-between hover:bg-[#fafafa] transition-colors">
-                  <div>
-                    <p className="text-[14px] font-medium text-[#1a1a1a]">{req.profiles?.full_name ?? '—'}</p>
-                    <p className="text-[12px] text-[#6b7280] mt-0.5">
-                      REQ-{req.id.slice(-6).toUpperCase()} · {req.service_type}
+                <div key={req.id} className="px-5 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-[#fafafa] transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-[#1a1a1a] leading-5 truncate">{req.profiles?.full_name ?? '—'}</p>
+                    <p className="text-[12px] text-[#6b7280] mt-1 truncate">
+                      <span style={{ fontFamily: 'Menlo, monospace' }}>REQ-{req.id.slice(-6).toUpperCase()}</span>
+                      {' · '}{SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
                     </p>
                   </div>
                   <button
                     onClick={() => navigate(ROUTES.KADES_REQUEST_DETAIL.replace(':id', req.id))}
-                    className="h-8 px-4 rounded-lg text-[13px] font-medium text-white border-0 cursor-pointer hover:opacity-90 transition-opacity"
+                    className="h-9 px-4 rounded-lg text-[13px] font-medium text-white border-0 cursor-pointer hover:opacity-90 transition-opacity w-full sm:w-auto shrink-0 whitespace-nowrap"
                     style={{ background: '#1e5fb8' }}
                   >
-                    Tinjau & TTD
+                    Tinjau &amp; TTD
                   </button>
                 </div>
               ))}

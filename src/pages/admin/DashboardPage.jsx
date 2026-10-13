@@ -201,31 +201,41 @@ export default function AdminDashboard() {
                 const s = STATUS_QUEUE_MAP[req.status] ?? STATUS_QUEUE_MAP.pending
                 return (
                   <div key={req.id} className={i > 0 ? 'border-t border-[#f3f4f6] pt-4' : ''}>
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      {/* Info */}
                       <div className="flex items-start gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
                           style={{ background: 'rgba(30,95,184,0.08)' }}>
                           <DocumentIcon />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-[14px] text-[#1a1a1a] leading-5 truncate">
-                            {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
-                          </p>
-                          <p className="text-[12px] text-[#6b7280] mt-0.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-medium text-[14px] text-[#1a1a1a] leading-5">
+                              {SERVICE_TYPE_LABELS[req.service_type] ?? req.service_type}
+                            </p>
+                            {/* Badge: inline dengan judul di mobile */}
+                            <span className="sm:hidden shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap"
+                              style={{ background: s.bg, color: s.text }}>
+                              {s.label}
+                            </span>
+                          </div>
+                          <p className="text-[12px] text-[#6b7280] mt-0.5 truncate">
                             <span style={{ fontFamily: 'Menlo, monospace' }}>REQ-{req.id.slice(-6).toUpperCase()}</span>
                             {' · '}{req.profiles?.full_name ?? '—'}
                           </p>
+                          <p className="text-[12px] text-[#9ca3af] mt-0.5 sm:hidden">{formatDate(req.created_at)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
+                      {/* Aksi */}
+                      <div className="flex items-center justify-end gap-3 shrink-0">
                         <p className="text-[13px] text-[#6b7280] hidden sm:block">{formatDate(req.created_at)}</p>
-                        <span className="px-2.5 py-0.5 rounded-full text-[12px] font-medium"
+                        <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[12px] font-medium whitespace-nowrap"
                           style={{ background: s.bg, color: s.text }}>
                           {s.label}
                         </span>
                         <button
                           onClick={() => navigate(ROUTES.ADMIN_REQUEST_DETAIL.replace(':id', req.id))}
-                          className="flex items-center gap-1.5 h-8 px-3 bg-[#1e5fb8] rounded-lg text-[13px] font-medium text-white hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer"
+                          className="flex items-center justify-center gap-1.5 h-9 px-4 bg-[#1e5fb8] rounded-lg text-[13px] font-medium text-white hover:bg-[#1e3a8a] transition-colors border-0 cursor-pointer w-full sm:w-auto"
                         >
                           Proses <ArrowRightIcon />
                         </button>
