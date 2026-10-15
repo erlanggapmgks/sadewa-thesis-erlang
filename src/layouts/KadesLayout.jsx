@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
+import NotificationBell from '../components/notifications/NotificationBell'
 import { ROUTES } from '../routes/routes'
 import { useAuthContext } from '../context/AuthContext'
 
@@ -98,6 +99,7 @@ export default function KadesLayout() {
             </span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
+            <NotificationBell mode="kepala_desa" />
             <div className="hidden sm:flex items-center gap-2 px-1 py-1 rounded-lg">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0"

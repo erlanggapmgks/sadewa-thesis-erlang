@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
+import NotificationBell from '../components/notifications/NotificationBell'
 import { ROUTES } from '../routes/routes'
 import { useAuthContext } from '../context/AuthContext'
 
@@ -26,13 +27,6 @@ function LogoIcon({ size = 56 }) {
         display: 'block',
       }}
     />
-  )
-}
-function BellIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.75">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-    </svg>
   )
 }
 function LogoutIcon() {
@@ -154,10 +148,7 @@ export default function AdminLayout() {
             </span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button className="relative w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-[#f3f4f6] transition-colors cursor-pointer border-0 bg-transparent hidden sm:flex items-center justify-center shrink-0" aria-label="Notifikasi">
-              <BellIcon />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <NotificationBell mode="admin" />
             <div className="hidden sm:flex items-center gap-2 px-1 py-1 rounded-lg">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0"

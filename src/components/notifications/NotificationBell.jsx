@@ -1,15 +1,39 @@
-// Lonceng notifikasi warga — tombol + dropdown daftar notif.
+// Lonceng notifikasi — tombol + dropdown daftar notif. Dipakai lintas peran.
 //
 // Data berasal dari useNotifications (tabel `notifications` di Supabase yang
 // diisi otomatis oleh trigger saat status surat berubah). Badge menampilkan
 // jumlah belum dibaca yang SEBENARNYA; dropdown menampilkan daftar terbaru.
-// Klik satu notif → tandai dibaca + arahkan ke halaman Lacak Permohonan.
+// Klik satu notif → tandai dibaca + arahkan ke halaman yang relevan per peran.
+//
+// Prop `mode`:
+//   • 'citizen'     (default) → notif personal warga, menuju Lacak Permohonan
+//   • 'admin'                 → notif peran admin, menuju Kelola Pengajuan
+//   • 'kepala_desa'           → notif peran kades, menuju Daftar Pengajuan
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routes'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatRelativeTime } from '../../utils/formatDate'
+
+// Konfigurasi per mode: hook role + tujuan navigasi + teks kosong.
+const MODE_CONFIG = {
+  citizen: {
+    role: null,
+    target: ROUTES.CITIZEN_TRACK,
+    emptyHint: 'Notifikasi akan muncul saat ada pembaruan status permohonan surat Anda.',
+  },
+  admin: {
+    role: 'admin',
+    target: ROUTES.ADMIN_REQUESTS,
+    emptyHint: 'Notifikasi akan muncul saat ada pengajuan baru atau surat yang perlu difinalisasi.',
+  },
+  kepala_desa: {
+    role: 'kepala_desa',
+    target: ROUTES.KADES_REQUESTS,
+    emptyHint: 'Notifikasi akan muncul saat ada surat yang menunggu tanda tangan Anda.',
+  },
+}
 
 function BellIcon() {
   return (
@@ -33,9 +57,10 @@ function dotColor(status) {
   return STATUS_DOT[status] ?? '#9ca3af'
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ mode = 'citizen' }) {
   const navigate = useNavigate()
-  const { items, unreadCount, loading, markRead, markAllRead } = useNotifications()
+  const config = MODE_CONFIG[mode] ?? MODE_CONFIG.citizen
+  const { items, unreadCount, loading, markRead, markAllRead } = useNotifications({ role: config.role })
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
 
@@ -59,7 +84,7 @@ export default function NotificationBell() {
   function handleItemClick(n) {
     if (!n.read) markRead(n.id)
     setOpen(false)
-    navigate(ROUTES.CITIZEN_TRACK)
+    navigate(config.target)
   }
 
   const badge = unreadCount > 9 ? '9+' : String(unreadCount)
@@ -113,7 +138,7 @@ export default function NotificationBell() {
               <div className="px-4 py-10 text-center">
                 <p className="text-[13px] text-[#6b7280]">Belum ada notifikasi</p>
                 <p className="text-[12px] text-[#9ca3af] mt-1">
-                  Notifikasi akan muncul saat ada pembaruan status permohonan surat Anda.
+                  {config.emptyHint}
                 </p>
               </div>
             ) : (
